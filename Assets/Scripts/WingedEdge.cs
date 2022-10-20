@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using System.Collections;
 
 namespace WingedEdge
 {
@@ -15,22 +16,12 @@ namespace WingedEdge
         public WingedEdge startCCWEdge;
         public WingedEdge endCWEdge;
         public WingedEdge endCCWEdge;
-
-        public WingedEdge(int a, int b, int c, int d)
-        {
-            index = 1;
-        }
     }
     public class Vertex
     {
         public int index;
         public Vector3 position;
         public WingedEdge edge;
-        public Vertex(int index, Vector3 vertex)
-        {
-            this.index = index;
-            this.position = vertex;
-        }
     }
     public class Face
     {
@@ -43,37 +34,8 @@ namespace WingedEdge
         public List<WingedEdge> edges;
         public List<Face> faces;
         public WingedEdgeMesh(Mesh mesh)
-        {// constructeur prenant un mesh Vertex-Face en paramètre
-         // magic happens
-            vertices = new List<Vertex>();
-            edges = new List<WingedEdge>();
-            faces = new List<Face>();
-            Vector3[] tabVertices = mesh.vertices;
-            for (int i = 0; i < tabVertices.Length; i++)
-            {
-                Debug.Log("Vertex : " + i + " : " +tabVertices[i]);
-                vertices.Add(new Vertex(i, tabVertices[i]));
-            }
-            
-            //On récupère les quads et on les parcourt pour trouver les meshs
-            int[] quads = mesh.GetIndices(0);
-
-            for (int i = 0; i < quads.Length / 4; i++)
-            {
-                int index1 = quads[4 * i];
-                int index2 = quads[4 * i + 1];
-                int index3 = quads[4 * i + 2];
-                int index4 = quads[4 * i + 3];
-                edges.Add(new WingedEdge(index1, index2, index3, index4));
-
-                ulong key1 = ((ulong)Mathf.Min(index1, index2)) + (((ulong)Mathf.Max(index1, index2)) << 32);
-                ulong key2 = ((ulong)Mathf.Min(index2, index3)) + (((ulong)Mathf.Max(index2, index3)) << 32);
-                ulong key3 = ((ulong)Mathf.Min(index3, index4)) + (((ulong)Mathf.Max(index3, index4)) << 32);
-                ulong key4 = ((ulong)Mathf.Min(index4, index1)) + (((ulong)Mathf.Max(index4, index1)) << 32);
-
-
-            }
-
+        {// constructeur prenant un mesh Vertex-Face en paramÃ¨tre
+            // magic happens
         }
         public Mesh ConvertToFaceVertexMesh()
         {
@@ -81,49 +43,57 @@ namespace WingedEdge
             // magic happens
             return faceVertexMesh;
         }
-        /*string ConvertToCSV(string separator)
-        {
-            if (!(m_Mf && m_Mf.mesh)) return "";
-
-            Vector3[] vertices = m_Mf.mesh.vertices;
-            int[] quads = m_Mf.mesh.GetIndices(0);
-
-            List<string> strings = new List<string>();
-
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                Vector3 pos = vertices[i];
-                strings.Add(i.ToString() + separator + pos.x.ToString("N03") + " " + pos.y.ToString("N03") + " " + pos.z.ToString("N03") + separator + separator);
-
-            }
-            for (int i = vertices.Length; i < quads.Length / 4; i++)
-                strings.Add(separator + separator + separator);
-
-            for (int i = 0; i < quads.Length / 4; i++)
-            {
-                strings[i] += i.ToString() + separator
-                    + quads[4 * i + 0].ToString() + ","
-                    + quads[4 * i + 1].ToString() + ","
-                    + quads[4 * i + 2].ToString() + ","
-                    + quads[4 * i + 3].ToString();
-            }
-
-            return "Vertices" + separator + separator + separator + "Faces\n"
-                + "Index" + separator + "Position" + separator + separator + "Index" + separator + "Indices des vertices\n"
-                + string.Join("\n", strings);
-        }
-
-        public string ConvertToCSVFormat(string separator = "\t")
+        public string ConvertToCSVFormat(string separator="\t")
         {
             string str = "";
             //magic happens
-            GUIUtility.systemCopyBuffer = ConvertToCSV(separator);
-            Debug.Log(ConvertToCSV("\t"));
             return str;
-        }*/
-        public void DrawGizmos(bool drawVertices, bool drawEdges, bool drawFaces)
+        }
+        public void DrawGizmos(bool drawVertices,bool drawEdges,bool drawFaces)
         {
-            //magic happens
+            GUIStyle style = new GUIStyle();
+            
+            if(drawVertices){
+                style.fontSize = 12;
+                style.normal.textColor = Color.red;
+                Gizmos.color = Color.orange;
+
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    Vector3 worldPos =  transform.TransformPoint(vertices[i]);
+                    Gizmos.DrawSphere(worldPos, 0.5f); // Points oranges 
+                    Handles.Label(worldPos, i.ToString(), style);
+                }
+            }
+            if(drawEdges || drawFaces){
+                for (int i = 0; i < quads.Length/4; i++)
+                {
+                    int index1 = quads[4 * i];
+                    int index2 = quads[4 * i+1];
+                    int index3 = quads[4 * i+2];
+                    int index4 = quads[4 * i+3];
+
+                    Vector3 pt1 = transform.TransformPoint(vertices[index1]);
+                    Vector3 pt2 = transform.TransformPoint(vertices[index2]);
+                    Vector3 pt3 = transform.TransformPoint(vertices[index3]);
+                    Vector3 pt4 = transform.TransformPoint(vertices[index4]);
+
+                    if(drawEdges){
+                        Gizmos.color = Color.black;
+                        Gizmos.DrawLine(pt1, pt2);
+                        Gizmos.DrawLine(pt2, pt3);
+                        Gizmos.DrawLine(pt3, pt4);
+                        Gizmos.DrawLine(pt4 , pt1);
+                    }
+                    if(drawFaces){
+                        style.fontSize = 10;
+                        style.normal.textColor = Color.blue;
+                        string str = string.Format("{0} ({1},{2},{3},{4})", i, index1, index2, index3, index4);
+
+                        Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+                    }
+                }
+            }
         }
     }
 }

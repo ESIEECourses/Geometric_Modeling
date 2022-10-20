@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using WingedEdge;
 
 public class MeshGeneratorQuads : MonoBehaviour
 {
@@ -40,7 +39,7 @@ public class MeshGeneratorQuads : MonoBehaviour
              );
         */
         /*
-        // Sphère
+        // SphÃ¨re
         m_Mf.mesh = CreateNormalizedGridXZ(10, 5,
             (kX, kZ) =>
             {
@@ -88,21 +87,18 @@ public class MeshGeneratorQuads : MonoBehaviour
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
-        m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
-        WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
-
     }
 
     string ConvertToCSV(string separator)
     {
-        if (!(m_Mf && m_Mf.mesh)) return "";
+        if(!(m_Mf && m_Mf.mesh)) return "";
 
         Vector3[] vertices = m_Mf.mesh.vertices;
         int[] quads = m_Mf.mesh.GetIndices(0);
-
+        
         List<string> strings = new List<string>();
 
-        for (int i = 0; i < vertices.Length; i++)
+        for(int i =0; i< vertices.Length;i++)
         {
             Vector3 pos = vertices[i];
             strings.Add(i.ToString() + separator
@@ -112,10 +108,10 @@ public class MeshGeneratorQuads : MonoBehaviour
 
         }
 
-        for (int i = vertices.Length; i < Mathf.Max(vertices.Length, quads.Length / 4); i++)
-            strings.Add(separator + separator + separator);
-
-        for (int i = 0; i < quads.Length / 4; i++)
+        for(int i = vertices.Length; i < Mathf.Max(vertices.Length,quads.Length/4); i++)
+            strings.Add(separator+separator+separator);
+            
+        for(int i = 0; i < quads.Length/4; i++)
         {
             strings[i] += i.ToString() + separator
             + quads[4 * i + 0].ToString() + ","
@@ -124,7 +120,7 @@ public class MeshGeneratorQuads : MonoBehaviour
             + quads[4 * i + 3].ToString();
         }
 
-        return "Vertices" + separator + separator + separator + "Faces\n"
+        return"Vertices"+separator+separator+separator+"Faces\n"
         + "Index" + separator + "Position" + separator + separator
         + "Index" + separator + "Indices des vertices\n"
         + string.Join("\n", strings);
@@ -162,17 +158,17 @@ public class MeshGeneratorQuads : MonoBehaviour
         }
 
         mesh.vertices = vertices;
-        mesh.SetIndices(quads, MeshTopology.Quads, 0);
+        mesh.SetIndices(quads,MeshTopology.Quads,0);
 
         return mesh;
     }
 
-    Mesh CreateGridXZ(int nSegmentsX, int nSegmentsZ, Vector3 halfSize)
+    Mesh CreateGridXZ(int nSegmentsX,int nSegmentsZ, Vector3 halfSize)
     {
         Mesh mesh = new Mesh();
         mesh.name = "grid";
 
-        Vector3[] vertices = new Vector3[(nSegmentsX + 1) * (nSegmentsZ + 1)];
+        Vector3[] vertices = new Vector3[(nSegmentsX+1)*(nSegmentsZ+1)];
         int[] quads = new int[nSegmentsX * nSegmentsZ * 4];
 
 
@@ -182,13 +178,13 @@ public class MeshGeneratorQuads : MonoBehaviour
 
         int index = 0;
         // 2 boucle for pour remplir vertices
-        for (int i = 0; i < (nSegmentsZ + 1); i++)
+        for (int i = 0; i < (nSegmentsZ+1); i++)
         {
             float kz = (float)i / (nSegmentsZ + 1);
             Vector3 tmpLeftPos = Vector3.Lerp(leftTopPos, leftBotPos, kz);
             Vector3 tmpRightPos = tmpLeftPos + 2 * halfSize.z * Vector3.right;
 
-            for (int j = 0; j < (nSegmentsX + 1); j++)
+            for (int j=0; j< (nSegmentsX+1); j++)
             {
                 float kx = (float)j / (nSegmentsX + 1);
                 vertices[index++] = Vector3.Lerp(tmpLeftPos, tmpRightPos, kx);
@@ -200,8 +196,8 @@ public class MeshGeneratorQuads : MonoBehaviour
         {
             for (int j = 0; j < (nSegmentsX); j++)
             {
-                quads[index++] = j + (i * (nSegmentsX + 1));
-                quads[index++] = (j + 1) + (i * (nSegmentsX + 1));
+                quads[index++] = j+(i* (nSegmentsX+1));
+                quads[index++] = (j+1) + (i*(nSegmentsX+1));
                 quads[index++] = (j + nSegmentsX + 2) + (i * (nSegmentsX + 1));
                 quads[index++] = (j + nSegmentsX + 1) + (i * (nSegmentsX + 1));
             }
@@ -213,7 +209,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         return mesh;
     }
 
-    Mesh CreateNormalizedGridXZ(int nSegmentsX, int nSegmentsZ, ComputePosDelegate computePos = null)
+    Mesh CreateNormalizedGridXZ(int nSegmentsX, int nSegmentsZ, ComputePosDelegate computePos=null)
     {
         Mesh mesh = new Mesh();
         mesh.name = "normalizedGrid";
@@ -230,7 +226,7 @@ public class MeshGeneratorQuads : MonoBehaviour
             for (int j = 0; j < nSegmentsX + 1; j++)
             {
                 float kX = (float)j / nSegmentsX;
-                vertices[index++] = computePos != null ? computePos(kX, kZ) : new Vector3(kX, 0, kZ);
+                vertices[index++] = computePos!=null?computePos(kX,kZ):new Vector3(kX,0,kZ);
             }
         }
 
@@ -259,53 +255,62 @@ public class MeshGeneratorQuads : MonoBehaviour
         mesh.name = "box";
 
         Vector3[] vertices = new Vector3[8];
-        int[] quads = new int[6 * 4];
+        
 
         int index = 0;
-        vertices[index++] = new Vector3(halfSize.x, -halfSize.y, halfSize.z); // vertice du haut
-        vertices[index++] = new Vector3(halfSize.x, -halfSize.y, -halfSize.z); // vertice du haut
-        vertices[index++] = new Vector3(-halfSize.x, -halfSize.y, -halfSize.z); // vertice du haut
-        vertices[index++] = new Vector3(-halfSize.x, -halfSize.y, halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3( halfSize.x,-halfSize.y, halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3( halfSize.x,-halfSize.y,-halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3(-halfSize.x,-halfSize.y,-halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3(-halfSize.x,-halfSize.y, halfSize.z); // vertice du haut
 
-        vertices[index++] = new Vector3(halfSize.x, halfSize.y, halfSize.z); // vertice du bas
-        vertices[index++] = new Vector3(halfSize.x, halfSize.y, -halfSize.z); // vertice du bas
-        vertices[index++] = new Vector3(-halfSize.x, halfSize.y, -halfSize.z); // vertice du bas
+        vertices[index++] = new Vector3( halfSize.x, halfSize.y, halfSize.z); // vertice du bas
+        vertices[index++] = new Vector3( halfSize.x, halfSize.y,-halfSize.z); // vertice du bas
+        vertices[index++] = new Vector3(-halfSize.x, halfSize.y,-halfSize.z); // vertice du bas
         vertices[index++] = new Vector3(-halfSize.x, halfSize.y, halfSize.z); // vertice du bas
 
-        index = 0;
-        //Face Basse
-        quads[index++] = 0;
-        quads[index++] = 3;
-        quads[index++] = 2;
-        quads[index++] = 1;
-        //Face Haute
-        quads[index++] = 4;
-        quads[index++] = 5;
-        quads[index++] = 6;
-        quads[index++] = 7;
-        //Face X
-        quads[index++] = 0;
-        quads[index++] = 1;
-        quads[index++] = 5;
-        quads[index++] = 4;
-        //Face Z
-        quads[index++] = 0;
-        quads[index++] = 4;
-        quads[index++] = 7;
-        quads[index++] = 3;
-        //Face mX
-        quads[index++] = 3;
-        quads[index++] = 7;
-        quads[index++] = 6;
-        quads[index++] = 2;
-        //Face mZ
-        quads[index++] = 1;
-        quads[index++] = 2;
-        quads[index++] = 6;
-        quads[index++] = 5;
+        int[] quads = new int[] {
+            0,3,2,1,//Face Basse
+            4,5,6,7,//Face Haute
+            0,1,5,4,//Face X
+            0,4,7,3,//Face Z
+            3,7,6,2,//Face mX
+            1,2,6,5 //Face mZ
+        };
 
+        // index = 0;
+        // //Face Basse
+        // quads[index++] = 0;
+        // quads[index++] = 3;
+        // quads[index++] = 2;
+        // quads[index++] = 1;
+        // //Face Haute
+        // quads[index++] = 4;
+        // quads[index++] = 5;
+        // quads[index++] = 6;
+        // quads[index++] = 7;
+        // //Face X
+        // quads[index++] = 0;
+        // quads[index++] = 1;
+        // quads[index++] = 5;
+        // quads[index++] = 4;
+        // //Face Z
+        // quads[index++] = 0;
+        // quads[index++] = 4;
+        // quads[index++] = 7;
+        // quads[index++] = 3;
+        // //Face mX
+        // quads[index++] = 3;
+        // quads[index++] = 7;
+        // quads[index++] = 6;
+        // quads[index++] = 2;
+        // //Face mZ
+        // quads[index++] = 1;
+        // quads[index++] = 2;
+        // quads[index++] = 6;
+        // quads[index++] = 5;
+        
         mesh.vertices = vertices;
-        mesh.SetIndices(quads, MeshTopology.Quads, 0);
+        mesh.SetIndices(quads,MeshTopology.Quads,0);
 
         return mesh;
     }
@@ -316,17 +321,17 @@ public class MeshGeneratorQuads : MonoBehaviour
         mesh.name = "chips";
 
         Vector3[] vertices = new Vector3[8];
-        int[] quads = new int[3 * 4];
+        int[] quads = new int[3*4];
 
         int index = 0;
-        vertices[index++] = new Vector3(halfSize.x, -halfSize.y, halfSize.z); // vertice du haut
-        vertices[index++] = new Vector3(halfSize.x, -halfSize.y, -halfSize.z); // vertice du haut
-        vertices[index++] = new Vector3(-halfSize.x, -halfSize.y, -halfSize.z); // vertice du haut
-        vertices[index++] = new Vector3(-halfSize.x, -halfSize.y, halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3( halfSize.x,-halfSize.y, halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3( halfSize.x,-halfSize.y,-halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3(-halfSize.x,-halfSize.y,-halfSize.z); // vertice du haut
+        vertices[index++] = new Vector3(-halfSize.x,-halfSize.y, halfSize.z); // vertice du haut
 
-        vertices[index++] = new Vector3(halfSize.x, halfSize.y, halfSize.z); // vertice du bas
-        vertices[index++] = new Vector3(halfSize.x, halfSize.y, -halfSize.z); // vertice du bas
-        vertices[index++] = new Vector3(-halfSize.x, halfSize.y, -halfSize.z); // vertice du bas
+        vertices[index++] = new Vector3( halfSize.x, halfSize.y, halfSize.z); // vertice du bas
+        vertices[index++] = new Vector3( halfSize.x, halfSize.y,-halfSize.z); // vertice du bas
+        vertices[index++] = new Vector3(-halfSize.x, halfSize.y,-halfSize.z); // vertice du bas
         vertices[index++] = new Vector3(-halfSize.x, halfSize.y, halfSize.z); // vertice du bas
 
         index = 0;
@@ -347,7 +352,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         quads[index++] = 4;
 
         mesh.vertices = vertices;
-        mesh.SetIndices(quads, MeshTopology.Quads, 0);
+        mesh.SetIndices(quads,MeshTopology.Quads,0);
 
         return mesh;
     }
@@ -357,12 +362,12 @@ public class MeshGeneratorQuads : MonoBehaviour
         Mesh mesh = new Mesh();
         mesh.name = "polygon";
 
-        Vector3[] vertices = new Vector3[2 * nSectors + 1];
-        int[] quads = new int[nSectors * 4];
-        float deltaAngle = (Mathf.PI * 2) / (nSectors * 2);
+        Vector3[] vertices = new Vector3[2*nSectors +1];
+        int[] quads = new int[nSectors*4];
+        float deltaAngle = (Mathf.PI * 2) / (nSectors *2);
         for (int i = 0; i < 2 * nSectors; i++)
         {
-            vertices[i] = new Vector3(halfSize.x * Mathf.Cos(i * deltaAngle), 0, halfSize.z * Mathf.Sin(i * deltaAngle));
+            vertices[i]= new Vector3(halfSize.x*Mathf.Cos(i*deltaAngle), 0, halfSize.z*Mathf.Sin(i * deltaAngle));
         }
         vertices[vertices.Length - 1] = Vector3.zero;
 
@@ -370,12 +375,12 @@ public class MeshGeneratorQuads : MonoBehaviour
         int index = 0;
 
         //boucle for pour remplir quads
-        for (int j = 1; j < nSectors + 1; j++)
+        for (int j = 1; j < nSectors+1; j++)
         {
             //12-11-0-1
-            quads[index++] = (2 * j - 1) % (vertices.Length - 1);
+            quads[index++] = (2 * j - 1) % (vertices.Length -1) ;
             quads[index++] = vertices.Length - 1;
-            quads[index++] = ((2 * j - 1) + 2) % (vertices.Length - 1);
+            quads[index++] = ((2 * j - 1) + 2) % (vertices.Length - 1) ;
             quads[index++] = ((2 * j - 1) + 1) % (vertices.Length - 1);
         }
 
@@ -392,11 +397,11 @@ public class MeshGeneratorQuads : MonoBehaviour
 
         Vector3[] vertices = new Vector3[2 * nSectors + 1];
         int[] quads = new int[nSectors * 4];
-        float deltaAngle = (Mathf.PI * 2 - (endAngle - startAngle)) / (nSectors);
+        float deltaAngle = (Mathf.PI * 2 -(endAngle - startAngle)) / (nSectors);
 
         for (int i = 0; i < 2 * nSectors; i++)
         {
-            vertices[i] = new Vector3(halfSize.x * Mathf.Cos(i * deltaAngle + startAngle), 0, halfSize.z * Mathf.Sin((i + 1) * deltaAngle + startAngle));
+            vertices[i] = new Vector3(halfSize.x * Mathf.Cos(i * deltaAngle + startAngle), 0, halfSize.z * Mathf.Sin((i+1) * deltaAngle + startAngle));
         }
         vertices[vertices.Length - 1] = Vector3.zero;
 
@@ -411,9 +416,9 @@ public class MeshGeneratorQuads : MonoBehaviour
         for (int j = 0; j < nSectors; j++)
         {
             //12-11-0-1
-
-            quads[index++] = (2 * j);
-            quads[index++] = vertices.Length - 1;
+           
+            quads[index++] = (2 * j) ;
+            quads[index++] = vertices.Length - 1 ;
             quads[index++] = ((2 * j) + 2);
             quads[index++] = ((2 * j) + 1);
         }
@@ -438,19 +443,19 @@ public class MeshGeneratorQuads : MonoBehaviour
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            Vector3 worldPos = transform.TransformPoint(vertices[i]);
+            Vector3 worldPos =  transform.TransformPoint(vertices[i]);
             Handles.Label(worldPos, i.ToString(), style);
         }
 
         Gizmos.color = Color.black;
         style.normal.textColor = Color.blue;
 
-        for (int i = 0; i < quads.Length / 4; i++)
+        for (int i = 0; i < quads.Length/4; i++)
         {
             int index1 = quads[4 * i];
-            int index2 = quads[4 * i + 1];
-            int index3 = quads[4 * i + 2];
-            int index4 = quads[4 * i + 3];
+            int index2 = quads[4 * i+1];
+            int index3 = quads[4 * i+2];
+            int index4 = quads[4 * i+3];
 
             Vector3 pt1 = transform.TransformPoint(vertices[index1]);
             Vector3 pt2 = transform.TransformPoint(vertices[index2]);
@@ -460,7 +465,7 @@ public class MeshGeneratorQuads : MonoBehaviour
             Gizmos.DrawLine(pt1, pt2);
             Gizmos.DrawLine(pt2, pt3);
             Gizmos.DrawLine(pt3, pt4);
-            Gizmos.DrawLine(pt4, pt1);
+            Gizmos.DrawLine(pt4 , pt1);
 
             string str = string.Format("{0} ({1},{2},{3},{4})",
                 i, index1, index2, index3, index4);
