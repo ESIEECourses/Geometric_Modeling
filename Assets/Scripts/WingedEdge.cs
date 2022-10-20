@@ -15,6 +15,11 @@ namespace WingedEdge
         public WingedEdge startCCWEdge;
         public WingedEdge endCWEdge;
         public WingedEdge endCCWEdge;
+
+        public WingedEdge(int a, int b, int c, int d)
+        {
+            index = 1;
+        }
     }
     public class Vertex
     {
@@ -40,12 +45,35 @@ namespace WingedEdge
         public WingedEdgeMesh(Mesh mesh)
         {// constructeur prenant un mesh Vertex-Face en paramètre
          // magic happens
-
+            vertices = new List<Vertex>();
+            edges = new List<WingedEdge>();
+            faces = new List<Face>();
             Vector3[] tabVertices = mesh.vertices;
-            for (int i=0;i<tabVertices.Length; i++)
+            for (int i = 0; i < tabVertices.Length; i++)
             {
-                vertices.Add(new Vertex (i, tabVertices[i]));
+                Debug.Log("Vertex : " + i + " : " +tabVertices[i]);
+                vertices.Add(new Vertex(i, tabVertices[i]));
             }
+            
+            //On récupère les quads et on les parcourt pour trouver les meshs
+            int[] quads = mesh.GetIndices(0);
+
+            for (int i = 0; i < quads.Length / 4; i++)
+            {
+                int index1 = quads[4 * i];
+                int index2 = quads[4 * i + 1];
+                int index3 = quads[4 * i + 2];
+                int index4 = quads[4 * i + 3];
+                edges.Add(new WingedEdge(index1, index2, index3, index4));
+
+                ulong key1 = ((ulong)Mathf.Min(index1, index2)) + (((ulong)Mathf.Max(index1, index2)) << 32);
+                ulong key2 = ((ulong)Mathf.Min(index2, index3)) + (((ulong)Mathf.Max(index2, index3)) << 32);
+                ulong key3 = ((ulong)Mathf.Min(index3, index4)) + (((ulong)Mathf.Max(index3, index4)) << 32);
+                ulong key4 = ((ulong)Mathf.Min(index4, index1)) + (((ulong)Mathf.Max(index4, index1)) << 32);
+
+
+            }
+
         }
         public Mesh ConvertToFaceVertexMesh()
         {

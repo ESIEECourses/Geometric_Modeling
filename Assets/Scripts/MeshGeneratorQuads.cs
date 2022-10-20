@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using WingedEdge;
 
 public class MeshGeneratorQuads : MonoBehaviour
 {
@@ -86,6 +87,9 @@ public class MeshGeneratorQuads : MonoBehaviour
         // );
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
+
+        m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
+        WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
 
     }
 
