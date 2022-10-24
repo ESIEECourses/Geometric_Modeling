@@ -16,9 +16,32 @@ namespace WingedEdge
         public WingedEdge endCWEdge;
         public WingedEdge endCCWEdge;
 
-        public WingedEdge(int a, int b, int c, int d)
+        public WingedEdge(int a, Vertex startVertex, Vertex endVertex, Face rightface)
         {
-            index = 1;
+            this.index = a;
+            this.startVertex = startVertex;
+            this.endVertex = endVertex;
+            this.rightFace = rightface;
+        }
+        public void setleftFace(Face leftFace)
+        {
+            this.leftFace = leftFace;
+        }
+        public void setstartCWEdge(WingedEdge startCWEdge)
+        {
+            this.startCWEdge = startCWEdge;
+        }
+        public void setstartCCWEdge(WingedEdge startCCWEdge)
+        {
+            this.startCCWEdge = startCCWEdge;
+        }
+        public void setendCWEdge(WingedEdge endCWEdge)
+        {
+            this.endCWEdge = endCWEdge;
+        }
+        public void setCCWEdge(WingedEdge endCCWEdge)
+        {
+            this.endCCWEdge = endCCWEdge;
         }
     }
     public class Vertex
@@ -31,11 +54,23 @@ namespace WingedEdge
             this.index = index;
             this.position = vertex;
         }
+        public void setEdge(WingedEdge edge)
+        {
+            this.edge = edge;
+        }
     }
     public class Face
     {
         public int index;
         public WingedEdge edge;
+        public Face(int index)
+        {
+            this.index = index;
+        }
+        public void setWingedEdge(WingedEdge edge)
+        {
+            this.edge = edge;
+        }
     }
     public class WingedEdgeMesh
     {
@@ -57,23 +92,41 @@ namespace WingedEdge
             
             //On récupère les quads et on les parcourt pour trouver les meshs
             int[] quads = mesh.GetIndices(0);
-
+            Dictionary<ulong, WingedEdge> keys = new Dictionary<ulong, WingedEdge>();
             for (int i = 0; i < quads.Length / 4; i++)
             {
-                int index1 = quads[4 * i];
-                int index2 = quads[4 * i + 1];
-                int index3 = quads[4 * i + 2];
-                int index4 = quads[4 * i + 3];
-                edges.Add(new WingedEdge(index1, index2, index3, index4));
-
-                ulong key1 = ((ulong)Mathf.Min(index1, index2)) + (((ulong)Mathf.Max(index1, index2)) << 32);
-                ulong key2 = ((ulong)Mathf.Min(index2, index3)) + (((ulong)Mathf.Max(index2, index3)) << 32);
-                ulong key3 = ((ulong)Mathf.Min(index3, index4)) + (((ulong)Mathf.Max(index3, index4)) << 32);
-                ulong key4 = ((ulong)Mathf.Min(index4, index1)) + (((ulong)Mathf.Max(index4, index1)) << 32);
+                int [] indexes = new int [4];
+                indexes[0] = quads[4 * i];
+                indexes[1] = quads[4 * i + 1];
+                indexes[2] = quads[4 * i + 2];
+                indexes[3] = quads[4 * i + 3];
 
 
+                //On complete la liste de face 
+                faces.Add(new Face(i));
+
+                //On complete startVertex, endVertex, leftFace et rightFace
+                for (int j=0; j < vertices.Count; j++)
+                {
+                    // creer un dictionnaire cle a laquell est associé une seule edge utiliser la méthode try get Value
+                   
+                    ulong key = ((ulong)Mathf.Min(indexes[j], indexes[j+1])) + (((ulong)Mathf.Max(indexes[j], indexes[j+1])) << 32);
+                
+                    WingedEdge temp = null;
+
+                    if (keys.TryGetValue(key,out temp) == false)
+                    {
+                        edges.Add(new WingedEdge(j, vertices[indexes[j]], vertices[indexes[j++]], faces[i]));
+                        keys.Add(key,edges[j]);
+                    }
+                    else
+                    {
+                        //Complète les info manquante comme la leftFace par exemple(je te laissse réfléchir)
+                    }
+                    //Puis apres avoir tous les Face vertices et edges.
+                    //Il manque plus qu'à compléter les CCW et CW
+                }
             }
-
         }
         public Mesh ConvertToFaceVertexMesh()
         {

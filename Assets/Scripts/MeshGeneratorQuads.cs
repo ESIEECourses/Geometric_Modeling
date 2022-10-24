@@ -89,7 +89,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         Debug.Log(ConvertToCSV("\t"));*/
 
         m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
-        WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
+        //WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
 
     }
 
