@@ -30,7 +30,10 @@ namespace HalfEdge
         public List<Face> faces;
         public HalfEdgeMesh(Mesh mesh)
         { // constructeur prenant un mesh Vertex-Face en paramètre
-            //magic happens
+            vertices = new List<Vertex>;
+            edges = new List<HalfEdge>;
+            faces = new List<Face>;
+            Vector3[] tabVertices = mesh.vertices;
         }
         public Mesh ConvertToFaceVertexMesh()
         {
