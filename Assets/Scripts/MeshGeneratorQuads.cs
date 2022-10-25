@@ -88,8 +88,9 @@ public class MeshGeneratorQuads : MonoBehaviour
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
-        m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
-        //WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
+        //m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
+        m_Mf.mesh = CreateBox(new Vector3(3, 3, 3));
+        WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
 
     }
 
