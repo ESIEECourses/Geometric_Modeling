@@ -16,6 +16,7 @@ public class MeshGeneratorQuads : MonoBehaviour
 
     [SerializeField] AnimationCurve m_Profil;
 
+    public WingedEdgeMesh m_win;
 
     void Start()
     {
@@ -90,8 +91,9 @@ public class MeshGeneratorQuads : MonoBehaviour
 
         //m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
         m_Mf.mesh = CreateBox(new Vector3(3, 3, 3));
-        WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
-
+        //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
+        this.m_win = new WingedEdgeMesh(m_Mf.mesh);
+        
     }
 
     string ConvertToCSV(string separator)
@@ -260,7 +262,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         mesh.name = "box";
 
         Vector3[] vertices = new Vector3[8];
-        int[] quads = new int[6 * 4];
+
 
         int index = 0;
         vertices[index++] = new Vector3(halfSize.x, -halfSize.y, halfSize.z); // vertice du haut
@@ -272,38 +274,15 @@ public class MeshGeneratorQuads : MonoBehaviour
         vertices[index++] = new Vector3(halfSize.x, halfSize.y, -halfSize.z); // vertice du bas
         vertices[index++] = new Vector3(-halfSize.x, halfSize.y, -halfSize.z); // vertice du bas
         vertices[index++] = new Vector3(-halfSize.x, halfSize.y, halfSize.z); // vertice du bas
-
-        index = 0;
-        //Face Basse
-        quads[index++] = 0;
-        quads[index++] = 3;
-        quads[index++] = 2;
-        quads[index++] = 1;
-        //Face Haute
-        quads[index++] = 4;
-        quads[index++] = 5;
-        quads[index++] = 6;
-        quads[index++] = 7;
-        //Face X
-        quads[index++] = 0;
-        quads[index++] = 1;
-        quads[index++] = 5;
-        quads[index++] = 4;
-        //Face Z
-        quads[index++] = 0;
-        quads[index++] = 4;
-        quads[index++] = 7;
-        quads[index++] = 3;
-        //Face mX
-        quads[index++] = 3;
-        quads[index++] = 7;
-        quads[index++] = 6;
-        quads[index++] = 2;
-        //Face mZ
-        quads[index++] = 1;
-        quads[index++] = 2;
-        quads[index++] = 6;
-        quads[index++] = 5;
+        //int[] quads = new int[24] { 0, 3, 7, 4, 3, 2, 6, 7, 2, 1, 5, 6, 1, 0, 4, 5, 2, 3, 0, 1, 5, 4, 7, 6 };
+        int[] quads = new int[] {
+            0,3,2,1,//Face Basse
+            4,5,6,7,//Face Haute
+            0,1,5,4,//Face X
+            0,4,7,3,//Face Z
+            3,7,6,2,//Face mX
+            1,2,6,5 //Face mZ
+        };
 
         mesh.vertices = vertices;
         mesh.SetIndices(quads, MeshTopology.Quads, 0);
@@ -437,37 +416,72 @@ public class MeshGeneratorQuads : MonoBehaviour
         style.fontSize = 15;
         style.normal.textColor = Color.red;
 
-        for (int i = 0; i < vertices.Length; i++)
+        //WingedEdgeDrawGizmos
+        if (m_win != null)
         {
-            Vector3 worldPos = transform.TransformPoint(vertices[i]);
-            Handles.Label(worldPos, i.ToString(), style);
+            WingedEdgeMesh wingedEdgeMesh = m_win;
+            wingedEdgeMesh.DrawGizmos(m_DisplayMeshVertices, m_DisplayMeshEdges, m_DisplayMeshFaces, transform);
+            Gizmos.color = Color.black;
+            style.normal.textColor = Color.blue;
+
+            /*for (int i = 0; i < quads.Length / 4; i++)
+            {
+                int index1 = quads[4 * i];
+                int index2 = quads[4 * i + 1];
+                int index3 = quads[4 * i + 2];
+                int index4 = quads[4 * i + 3];
+
+                Vector3 pt1 = transform.TransformPoint(vertices[index1]);
+                Vector3 pt2 = transform.TransformPoint(vertices[index2]);
+                Vector3 pt3 = transform.TransformPoint(vertices[index3]);
+                Vector3 pt4 = transform.TransformPoint(vertices[index4]);
+
+                Gizmos.DrawLine(pt1, pt2);
+                Gizmos.DrawLine(pt2, pt3);
+                Gizmos.DrawLine(pt3, pt4);
+                Gizmos.DrawLine(pt4, pt1);
+
+                string str = string.Format("{0} ({1},{2},{3},{4})",
+                    i, index1, index2, index3, index4);
+
+                Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+
+            }*/
         }
-
-        Gizmos.color = Color.black;
-        style.normal.textColor = Color.blue;
-
-        for (int i = 0; i < quads.Length / 4; i++)
+        else
         {
-            int index1 = quads[4 * i];
-            int index2 = quads[4 * i + 1];
-            int index3 = quads[4 * i + 2];
-            int index4 = quads[4 * i + 3];
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 worldPos = transform.TransformPoint(vertices[i]);
+                Handles.Label(worldPos, i.ToString(), style);
+            }
 
-            Vector3 pt1 = transform.TransformPoint(vertices[index1]);
-            Vector3 pt2 = transform.TransformPoint(vertices[index2]);
-            Vector3 pt3 = transform.TransformPoint(vertices[index3]);
-            Vector3 pt4 = transform.TransformPoint(vertices[index4]);
+            Gizmos.color = Color.black;
+            style.normal.textColor = Color.blue;
 
-            Gizmos.DrawLine(pt1, pt2);
-            Gizmos.DrawLine(pt2, pt3);
-            Gizmos.DrawLine(pt3, pt4);
-            Gizmos.DrawLine(pt4, pt1);
+            for (int i = 0; i < quads.Length / 4; i++)
+            {
+                int index1 = quads[4 * i];
+                int index2 = quads[4 * i + 1];
+                int index3 = quads[4 * i + 2];
+                int index4 = quads[4 * i + 3];
 
-            string str = string.Format("{0} ({1},{2},{3},{4})",
-                i, index1, index2, index3, index4);
+                Vector3 pt1 = transform.TransformPoint(vertices[index1]);
+                Vector3 pt2 = transform.TransformPoint(vertices[index2]);
+                Vector3 pt3 = transform.TransformPoint(vertices[index3]);
+                Vector3 pt4 = transform.TransformPoint(vertices[index4]);
 
-            Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+                Gizmos.DrawLine(pt1, pt2);
+                Gizmos.DrawLine(pt2, pt3);
+                Gizmos.DrawLine(pt3, pt4);
+                Gizmos.DrawLine(pt4, pt1);
 
+                string str = string.Format("{0} ({1},{2},{3},{4})",
+                    i, index1, index2, index3, index4);
+
+                Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+
+            }
         }
     }
 }
