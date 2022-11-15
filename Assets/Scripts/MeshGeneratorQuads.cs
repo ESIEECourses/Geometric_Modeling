@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
+using WingedEdge;
 
 public class MeshGeneratorQuads : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class MeshGeneratorQuads : MonoBehaviour
     delegate float3 ComputePosDelegate_SIMD(float3 k);
 
     MeshFilter m_Mf;
+    WingedEdgeMesh m_Win;
     [SerializeField] bool m_DisplayMeshInfo = true;
     [SerializeField] bool m_DisplayMeshEdges = true;
     [SerializeField] bool m_DisplayMeshVertices = true;
@@ -65,7 +67,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         
 
         //Box
-        //m_Mf.mesh = CreateBox(new Vector3(3,3,3));
+        m_Mf.mesh = CreateBox(new Vector3(3,3,3));
 
         //Chips
         //m_Mf.mesh = CreateChips(new Vector3(3,3,3));
@@ -111,29 +113,30 @@ public class MeshGeneratorQuads : MonoBehaviour
 
 
         //Unity.Mathematics
-        bool bothSides = true;
-        //Grid avec SIMD
-        m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
-            (bothSides ? 2 : 1) * int3(100,100,1),
-            (k) =>
-            {
-                //Grid simple
-                //return lerp(float3(-5f,0,-5f),float3(5f, 0, 5f),k.xzy);
-                //Grid with step
-                //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,step(.2f, k.x),k.y));
-                //Grid with step smooth
-                //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x),k.y));
-                //Grid with step smooth hyperbolique
-                //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x * k.y),k.y));
-                //Grid with step
-                return lerp(float3(-5, 1, -5), 
-                            float3(5, 0, 5), 
-                            float3(k.x, 
-                                   0.5f * (sin(k.x * 2 * PI * 4) * cos(k.y * 2 * PI * 3) + 1),
-                                   //smoothstep(0.2f - .05f, .2f + .05f, 0.5f*(sin(k.x*2*PI*4) * cos(k.y*2*PI*3)+1))
-                                   k.y));
-            }
-            );        
+        // bool bothSides = true;
+        // //Grid avec SIMD
+        // m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
+        //     (bothSides ? 2 : 1) * int3(100,100,1),
+        //     (k) =>
+        //     {
+        //         //Grid simple
+        //         //return lerp(float3(-5f,0,-5f),float3(5f, 0, 5f),k.xzy);
+        //         //Grid with step
+        //         //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,step(.2f, k.x),k.y));
+        //         //Grid with step smooth
+        //         //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x),k.y));
+        //         //Grid with step smooth hyperbolique
+        //         //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x * k.y),k.y));
+        //         //Grid with step
+        //         return lerp(float3(-5, 1, -5), 
+        //                     float3(5, 0, 5), 
+        //                     float3(k.x, 
+        //                            0.5f * (sin(k.x * 2 * PI * 4) * cos(k.y * 2 * PI * 3) + 1),
+        //                            //smoothstep(0.2f - .05f, .2f + .05f, 0.5f*(sin(k.x*2*PI*4) * cos(k.y*2*PI*3)+1))
+        //                            k.y));
+        //     }
+        //     ); 
+
         //Grid avec le SIMD : Repeated pattern
         // int3 nCells = int3(3,3,1);
         // int3 nSegmentsPerCell = int3(100,100,1);
@@ -159,8 +162,8 @@ public class MeshGeneratorQuads : MonoBehaviour
         //     );
 
         //Mesh
-        WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
-
+        m_Win = new WingedEdgeMesh(m_Mf.mesh);
+        m_Mf.mesh = m_Win.ConvertToFaceVertexMesh();
     }
 
     string ConvertToCSV(string separator)
@@ -337,7 +340,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         {
             for (int j = 0; j < nSegments.x + 1; j++)
             {
-                float3 k = (float3)(j,i) / nSegments;
+                float3 k = float3(j,i,0) / nSegments;
                 vertices[index++] = computePos != null ? computePos(k) : k;
             }
         }
@@ -548,6 +551,13 @@ public class MeshGeneratorQuads : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (!(m_Mf && m_Mf.mesh)) return;
+
+         //WingedEdgeDrawGizmos
+        if (m_Win != null)
+        {
+            WingedEdgeMesh wingedEdgeMesh = m_Win;
+            wingedEdgeMesh.DrawGizmos(m_DisplayMeshVertices, m_DisplayMeshEdges, m_DisplayMeshFaces, transform);
+        }
 
         Mesh mesh = m_Mf.mesh;
         Vector3[] vertices = mesh.vertices;

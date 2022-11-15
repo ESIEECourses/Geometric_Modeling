@@ -93,7 +93,27 @@ namespace WingedEdge
         public List<Vertex> vertices = null;
         public List<WingedEdge> edges = null;
         public List<Face> faces = null;
+        //MY CODE
+        /*public void SubdivideCatmullClark()
+        {
 
+        }
+
+        public void CatmullClarkCreateNewPoints(out List<Vector3> facePoints, out List<Vector3> edgePoints, out List<Vector3> vertexPoints)
+        {
+
+        }
+
+        public void SplitEdge(WingedEdge edge, Vector3 splittingPoint)
+        {
+
+        }
+
+        public void SplitFace(Face face, Vector3 splittingPoint)
+        {
+
+        }
+        */
         public bool isValid = false;
         public WingedEdgeMesh(Mesh mesh)
         {// constructeur prenant un mesh Vertex-Face en param�tre
@@ -313,61 +333,50 @@ namespace WingedEdge
         public void DrawGizmos(bool drawVertices, bool drawEdges, bool drawFaces, Transform transform)
         {
 
-            Mesh mesh = this.ConvertToFaceVertexMesh();
-            int[] m_quads = mesh.GetIndices(0);
-
             Gizmos.color = Color.black;
             GUIStyle style = new GUIStyle();
-            GUIStyle style2 = new GUIStyle();
             style.fontSize = 12;
-            style2.fontSize = 12;
 
             //vertices
             if (drawVertices)
             {
                 style.normal.textColor = Color.red;
-                style2.normal.textColor = Color.black;
                 for (int i = 0; i < vertices.Count; i++)
-                {
-                    Vector3 worldPos = transform.TransformPoint(vertices[i].position);
-                    Handles.Label(worldPos, "V"+vertices[i].index, style);
-                }
+                    Handles.Label(transform.TransformPoint(vertices[i].position), "V" + vertices[i].index, style);
             }
+
             //faces
             if (drawFaces)
             {
                 style.normal.textColor = Color.magenta;
-                //Debug.Log(faces.Count);
                 for (int i = 0; i < faces.Count; i++)
                 {
-                    int index1 = m_quads[4 * i];
-                    int index2 = m_quads[4 * i + 1];
-                    int index3 = m_quads[4 * i + 2];
-                    int index4 = m_quads[4 * i + 3];
-
-                    Vector3 pt1 = transform.TransformPoint(vertices[index1].position);
-                    Vector3 pt2 = transform.TransformPoint(vertices[index2].position);
-                    Vector3 pt3 = transform.TransformPoint(vertices[index3].position);
-                    Vector3 pt4 = transform.TransformPoint(vertices[index4].position);
-
-                    Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, "F" + faces[i].index, style);
-                    style.normal.textColor = Color.green;
+                    List<Vertex> faceVertex = faces[i].GetVertexFace();
+                    Vector3 C = new Vector3();
+                    for (int j = 0; j < faceVertex.Count; j++)
+                    {
+                        Gizmos.DrawLine(transform.TransformPoint(faceVertex[j].position), transform.TransformPoint(faceVertex[(j + 1) % faceVertex.Count].position));
+                        C += faceVertex[j].position;
+                    }
+                    Handles.Label(transform.TransformPoint(C / 4f), "F" + faces[i].index, style);
                 }
             }
+
             //edges
             if (drawEdges)
             {
                 style.normal.textColor = Color.blue;
-                style2.normal.textColor = Color.cyan;
                 for (int i = 0; i < edges.Count; i++)
                 {
                     Vector3 start = transform.TransformPoint(edges[i].startVertex.position);
                     Vector3 end = transform.TransformPoint(edges[i].endVertex.position);
                     Vector3 pos = Vector3.Lerp(start, end, 0.5f);
 
+                    Gizmos.DrawLine(start, end);
                     Handles.Label(pos, "e" + edges[i].index, style);
                 }
             }
         }
+
     }
 }
