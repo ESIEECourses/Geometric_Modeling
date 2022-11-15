@@ -2,10 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Unity.Mathematics;
+using static Unity.Mathematics.math;
 
 public class MeshGeneratorQuads : MonoBehaviour
 {
     delegate Vector3 ComputePosDelegate(float kx, float kz);
+    delegate float3 ComputePosDelegate_SIMD(float3 k);
 
     MeshFilter m_Mf;
     [SerializeField] bool m_DisplayMeshInfo = true;
@@ -87,8 +90,62 @@ public class MeshGeneratorQuads : MonoBehaviour
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
+
+        //Unity.Mathematics
+        bool bothSides = true;
+        //Grid avec SIMD
+        m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
+            (bothSides ? 2 : 1) * int3(100,100,1),
+            (k) =>
+            {
+                //Grid simple
+                //return lerp(float3(-5f,0,-5f),float3(5f, 0, 5f),k.xzy);
+                //Grid with step
+                //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,step(.2f, k.x),k.y));
+                //Grid with step smooth
+                //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x),k.y));
+                //Grid with step smooth hyperbolique
+                //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x * k.y),k.y));
+                //Grid with step
+                return lerp(float3(-5, 1, -5), 
+                            float3(5, 0, 5), 
+                            float3(k.x, 
+                                   0.5f * (sin(k.x * 2 * PI * 4) * cos(k.y * 2 * PI * 3) + 1),
+                                   //smoothstep(0.2f - .05f, .2f + .05f, 0.5f*(sin(k.x*2*PI*4) * cos(k.y*2*PI*3)+1))
+                                   k.y));
+            }
+            );        
+        // repeated pattern
+        int3 nCells = int3(3,3,1);
+        int3 nSegmentsPerCell = int3(100,100,1);
+        float3 kStep = float3(1) /(nCells * nSegmentsPerCell);
+        float3 cellSize = float3(1,.5f,1);
         
+        m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
+            nCells*nSegmentsPerCell,
+            (k) =>
+            {
+                //calculs sur la grille normalisée
+                int3 index = (int3)floor(k/kStep);
+                int3 localIndex = index % nSegmentsPerCell;
+                int3 indexCell = index /nSegmentsPerCell;
+                float3 relIndexCell = (float3)indexCell / nCells;
+
+                //calculs sur les positions dans l'espace
+                float3 cellOriginPos = lerp(
+                    -cellSize * nCells.xzy * 0.5f,
+                    cellSize * nCells.xzy * 0.5f,
+                    relIndexCell.xzy);
+                
+                k = frac(k * nCells);
+
+                return cellOriginPos + cellSize * float3(k.x, smoothstep(.2f - .05f,.2f + .05f,k.x*k.y),k.y);
+            }
+            );
+
+        //Mesh
         WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
+
     }
 
     string ConvertToCSV(string separator)
@@ -243,6 +300,48 @@ public class MeshGeneratorQuads : MonoBehaviour
                 quads[index++] = (i + 1) * (nSegmentsX + 1) + j + 1;
                 quads[index++] = i * (nSegmentsX + 1) + j + 1;
             }
+        }
+
+        mesh.vertices = vertices;
+        mesh.SetIndices(quads, MeshTopology.Quads, 0);
+
+        return mesh;
+    }
+
+    Mesh CreateNormalizedGridXZ_SIMD(int3 nSegments, ComputePosDelegate_SIMD computePos = null)
+    {
+        Mesh mesh = new Mesh();
+        mesh.name = "normalizedGrid";
+
+        Vector3[] vertices = new Vector3[(nSegments.x + 1) * (nSegments.y + 1)];
+        int[] quads = new int[nSegments.x * nSegments.y * 4];
+
+        //Vertices
+        int index = 0;
+        for (int i = 0; i < nSegments.y + 1; i++)
+        {
+            for (int j = 0; j < nSegments.x + 1; j++)
+            {
+                float3 k = (float3)(j,i) / nSegments;
+                vertices[index++] = computePos != null ? computePos(k) : k;
+            }
+        }
+
+        index = 0;
+        int offset = 0;
+        int nextOffset = offset;
+        //Quads
+        for (int i = 0; i < nSegments.y; i++)
+        {
+            nextOffset = offset + nSegments.x + 1;
+            for (int j = 0; j < nSegments.x; j++)
+            {
+                quads[index++] = offset + j;
+                quads[index++] = nextOffset + j;
+                quads[index++] = nextOffset + j + 1;
+                quads[index++] = offset + j + 1;
+            }
+            offset = nextOffset;
         }
 
         mesh.vertices = vertices;
