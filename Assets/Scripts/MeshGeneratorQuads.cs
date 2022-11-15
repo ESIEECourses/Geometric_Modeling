@@ -26,51 +26,53 @@ public class MeshGeneratorQuads : MonoBehaviour
         //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
 
         //Cylindre
-        /* m_Mf.mesh = CreateNormalizedGridXZ(20, 40,
-             (kX, kZ) =>
-             {
-                 float rho, theta, y;
+        // m_Mf.mesh = CreateNormalizedGridXZ(20, 40,
+        //     (kX, kZ) =>
+        //     {
+        //         float rho, theta, y;
 
-                 // coordinates mapping de (kX,kZ) -> (rho,theta,y)
-                 theta = kX * 2 * Mathf.PI;
-                 y = kZ * 6;
-                 //rho = 3 + .25f * Mathf.Sin(kZ*2*Mathf.PI*4) ;
-                 rho = m_Profile.Evaluate(kZ) * 2;
-                 return new Vector3(rho * Mathf.Cos(theta), y, rho * Mathf.Sin(theta));
-                 //return new Vector3(Mathf.Lerp(-1.5f, 5.5f, kX), 1, Mathf.Lerp(-2, 4, kZ));
-             }
-             );
-        */
-        /*
+        //         // coordinates mapping de (kX,kZ) -> (rho,theta,y)
+        //         theta = kX * 2 * Mathf.PI;
+        //         y = kZ * 6;
+        //         //rho = 3 + .25f * Mathf.Sin(kZ*2*Mathf.PI*4) ;
+        //         rho = m_Profile.Evaluate(kZ) * 2;
+        //         return new Vector3(rho * Mathf.Cos(theta), y, rho * Mathf.Sin(theta));
+        //         //return new Vector3(Mathf.Lerp(-1.5f, 5.5f, kX), 1, Mathf.Lerp(-2, 4, kZ));
+        //     }
+        //     );
+        
+        
         // Sphère
-        m_Mf.mesh = CreateNormalizedGridXZ(10, 5,
-            (kX, kZ) =>
-            {
-                float rho, theta, phi;
+        // m_Mf.mesh = CreateNormalizedGridXZ(10, 5,
+        //     (kX, kZ) =>
+        //     {
+        //         float rho, theta, phi;
 
-                // coordinates mapping de (kX,kZ) -> (rho,theta,phi)
-                theta = kX * 2 * Mathf.PI;
-                phi = kZ * Mathf.PI;
-                rho = 2 + .55f * Mathf.Cos(kX * 2 * Mathf.PI * 8)
-                                * Mathf.Sin(kZ * 2 * Mathf.PI * 6);
-                //rho = 3 + .25f * Mathf.Sin(kZ*2*Mathf.PI*4) ;
-                //rho = m_Profile.Evaluate(kZ) * 2;
+        //         // coordinates mapping de (kX,kZ) -> (rho,theta,phi)
+        //         theta = kX * 2 * Mathf.PI;
+        //         phi = kZ * Mathf.PI;
+        //         rho = 2 + .55f * Mathf.Cos(kX * 2 * Mathf.PI * 8)
+        //                         * Mathf.Sin(kZ * 2 * Mathf.PI * 6);
+        //         //rho = 3 + .25f * Mathf.Sin(kZ*2*Mathf.PI*4) ;
+        //         //rho = m_Profile.Evaluate(kZ) * 2;
 
-                return new Vector3(rho * Mathf.Cos(theta)*Mathf.Sin(phi),
-                    rho*Mathf.Cos(phi),
-                    rho * Mathf.Sin(theta)*Mathf.Sin(phi));
-                //return new Vector3(Mathf.Lerp(-1.5f, 5.5f, kX), 1, Mathf.Lerp(-2, 4, kZ));
-            }
-            );
-        */
+        //         return new Vector3(rho * Mathf.Cos(theta)*Mathf.Sin(phi),
+        //             rho*Mathf.Cos(phi),
+        //             rho * Mathf.Sin(theta)*Mathf.Sin(phi));
+        //         //return new Vector3(Mathf.Lerp(-1.5f, 5.5f, kX), 1, Mathf.Lerp(-2, 4, kZ));
+        //     }
+        //     );
+        
 
         //Box
         //m_Mf.mesh = CreateBox(new Vector3(3,3,3));
+
         //Chips
         //m_Mf.mesh = CreateChips(new Vector3(3,3,3));
 
         //Polygone
         //m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8),20);
+
         //PacMan
         //m_Mf.mesh = CreatePacman(new Vector3(8, 0, 8),20);
 
@@ -87,6 +89,23 @@ public class MeshGeneratorQuads : MonoBehaviour
         //         return OOmega + OmegaP;
         //     }
         // );
+
+        
+        //Helix
+        // m_Mf.mesh = CreateNormalizedGridXZ(20*6, 10,
+        //     (kX, kZ) =>
+        //     {
+        //         float R = 3;
+        //         float r = 1;
+        //         float theta = 6*2 * Mathf.PI * kX;
+        //         Vector3 OOmega = new Vector3(R * Mathf.Cos(theta), 0, R * Mathf.Sin(theta));
+        //         float alpha = Mathf.PI * 2 * kZ;
+        //         Vector3 OmegaP = r * Mathf.Cos(alpha) * OOmega.normalized + r * Mathf.Sin(alpha) * Vector3.up + Vector3.up*kX*2*r*6;
+        //         return OOmega + OmegaP;
+        //     }
+        // );
+        
+
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
@@ -115,33 +134,29 @@ public class MeshGeneratorQuads : MonoBehaviour
                                    k.y));
             }
             );        
-        // repeated pattern
-        int3 nCells = int3(3,3,1);
-        int3 nSegmentsPerCell = int3(100,100,1);
-        float3 kStep = float3(1) /(nCells * nSegmentsPerCell);
-        float3 cellSize = float3(1,.5f,1);
-        
-        m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
-            nCells*nSegmentsPerCell,
-            (k) =>
-            {
-                //calculs sur la grille normalisée
-                int3 index = (int3)floor(k/kStep);
-                int3 localIndex = index % nSegmentsPerCell;
-                int3 indexCell = index /nSegmentsPerCell;
-                float3 relIndexCell = (float3)indexCell / nCells;
-
-                //calculs sur les positions dans l'espace
-                float3 cellOriginPos = lerp(
-                    -cellSize * nCells.xzy * 0.5f,
-                    cellSize * nCells.xzy * 0.5f,
-                    relIndexCell.xzy);
-                
-                k = frac(k * nCells);
-
-                return cellOriginPos + cellSize * float3(k.x, smoothstep(.2f - .05f,.2f + .05f,k.x*k.y),k.y);
-            }
-            );
+        //Grid avec le SIMD : Repeated pattern
+        // int3 nCells = int3(3,3,1);
+        // int3 nSegmentsPerCell = int3(100,100,1);
+        // float3 kStep = float3(1) /(nCells * nSegmentsPerCell);
+        // float3 cellSize = float3(1,.5f,1);
+        // m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
+        //     nCells*nSegmentsPerCell,
+        //     (k) =>
+        //     {
+        //         //calculs sur la grille normalisée
+        //         int3 index = (int3)floor(k/kStep);
+        //         int3 localIndex = index % nSegmentsPerCell;
+        //         int3 indexCell = index /nSegmentsPerCell;
+        //         float3 relIndexCell = (float3)indexCell / nCells;
+        //         //calculs sur les positions dans l'espace
+        //         float3 cellOriginPos = lerp(
+        //             -cellSize * nCells.xzy * 0.5f,
+        //             cellSize * nCells.xzy * 0.5f,
+        //             relIndexCell.xzy);
+        //         k = frac(k * nCells);
+        //         return cellOriginPos + cellSize * float3(k.x, smoothstep(.2f - .05f,.2f + .05f,k.x*k.y),k.y);
+        //     }
+        //     );
 
         //Mesh
         WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
