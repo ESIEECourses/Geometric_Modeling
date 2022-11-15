@@ -87,6 +87,8 @@ public class MeshGeneratorQuads : MonoBehaviour
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
+        
+        WingedEdgeMesh win = new WingedEdgeMesh(m_Mf.mesh);
     }
 
     string ConvertToCSV(string separator)
