@@ -48,41 +48,43 @@ namespace WingedEdge
         {
             this.index = index;
         }
-        public List<WingedEdge> GetEdgesFace()
+        public List<WingedEdge> GetEdges()
         {
             List<WingedEdge> faceEdges = new List<WingedEdge>();
-            WingedEdge wingedEdge = this.edge;
-
-            while (!faceEdges.Contains(wingedEdge))
+            WingedEdge currEdge = null;
+            WingedEdge startEdge = this.edge;
+            while (currEdge!=startEdge)
             {
-                faceEdges.Add(wingedEdge);
-                if (this == wingedEdge.rightFace)
+                currEdge = this.edge;
+                faceEdges.Add(currEdge);
+                if (this == currEdge.rightFace)
                 {
 
-                    wingedEdge = wingedEdge.endCCWEdge;
+                    currEdge = currEdge.endCCWEdge;
                 }
                 else 
                 {
-                    wingedEdge = wingedEdge.startCCWEdge;
+                    currEdge = currEdge.startCCWEdge;
                 }
             }
             return faceEdges;
         }
 
-        public List<Vertex> GetVertexFace()
+        public List<Vertex> GetVertex()
         {
-            List<WingedEdge> faceEdges = GetEdgesFace();
+            List<WingedEdge> faceEdges = GetEdges();
             List<Vertex> faceVertices = new List<Vertex>();
-
-            for (int w = 0; w < faceEdges.Count; w++)
+            WingedEdge mon_Edge = null;
+            for (int i = 0; i < faceEdges.Count; i++)
             {
-                if (faceEdges[w].rightFace == this)
+                mon_Edge = faceEdges[i];
+                if (mon_Edge.rightFace == this)
                 {
-                    faceVertices.Add(faceEdges[w].startVertex);
+                    faceVertices.Add(mon_Edge.startVertex);
                 }
                 else
                 {
-                    faceVertices.Add(faceEdges[w].endVertex);
+                    faceVertices.Add(mon_Edge.endVertex);
                 }
             }
             return faceVertices;
@@ -226,8 +228,6 @@ namespace WingedEdge
             //On doit récupérer les edges d'une face et récupérer les vertices dans le même sens.
             //On cree donc deux méthodes distinctes dans la classe Face GetEdgesFace et GetVertexFace
             //FaceEdges
-            List<WingedEdge> faceEdges = new List<WingedEdge>();
-            List<Vertex> faceVertices = new List<Vertex>();
 
             //Vertices
             for (int i = 0; i < vertices.Count; i++)
@@ -240,7 +240,7 @@ namespace WingedEdge
             //Quads
             for (int j = 0; j < faces.Count; j++)
             {
-                List<Vertex> maListeVertexFace = faces[j].GetVertexFace();
+                List<Vertex> maListeVertexFace = faces[j].GetVertex();
                 m_quads[index++] = maListeVertexFace[0].index;
                 m_quads[index++] = maListeVertexFace[1].index;
                 m_quads[index++] = maListeVertexFace[2].index;
@@ -313,9 +313,6 @@ namespace WingedEdge
         public void DrawGizmos(bool drawVertices, bool drawEdges, bool drawFaces, Transform transform)
         {
 
-            Mesh mesh = this.ConvertToFaceVertexMesh();
-            int[] m_quads = mesh.GetIndices(0);
-
             Gizmos.color = Color.black;
             GUIStyle style = new GUIStyle();
             GUIStyle style2 = new GUIStyle();
@@ -336,22 +333,22 @@ namespace WingedEdge
             //faces
             if (drawFaces)
             {
-                style.normal.textColor = Color.magenta;
-                //Debug.Log(faces.Count);
+                style.normal.textColor = Color.cyan;
                 for (int i = 0; i < faces.Count; i++)
                 {
-                    int index1 = m_quads[4 * i];
-                    int index2 = m_quads[4 * i + 1];
-                    int index3 = m_quads[4 * i + 2];
-                    int index4 = m_quads[4 * i + 3];
-
-                    Vector3 pt1 = transform.TransformPoint(vertices[index1].position);
-                    Vector3 pt2 = transform.TransformPoint(vertices[index2].position);
-                    Vector3 pt3 = transform.TransformPoint(vertices[index3].position);
-                    Vector3 pt4 = transform.TransformPoint(vertices[index4].position);
+                    List <Vertex> vertices_une_face = faces[i].GetVertex();
+                    //Debug.Log(vertices_une_face.Count);
+                    /*Debug.Log(vertices_une_face[0].position);
+                    Debug.Log(vertices_une_face[1].position);
+                    Debug.Log(vertices_une_face[2].position);
+                    Debug.Log(vertices_une_face[3].position);
+                    Vector3 pt1 = transform.TransformPoint(vertices_une_face[0].position);
+                    Vector3 pt2 = transform.TransformPoint(vertices_une_face[1].position);
+                    Vector3 pt3 = transform.TransformPoint(vertices_une_face[2].position);
+                    Vector3 pt4 = transform.TransformPoint(vertices_une_face[3].position);
 
                     Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, "F" + faces[i].index, style);
-                    style.normal.textColor = Color.green;
+                    style.normal.textColor = Color.green;*/
                 }
             }
             //edges

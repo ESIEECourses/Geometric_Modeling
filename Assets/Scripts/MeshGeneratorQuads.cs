@@ -5,6 +5,7 @@ using UnityEngine;
 
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
+using WingedEdge;
 
 delegate Vector3 ComputePosDelegate(float kX, float kZ);
 delegate float3 ComputePosDelegate_SIMD(float3 k);
@@ -230,14 +231,8 @@ public class MeshGeneratorQuads : MonoBehaviour
 
 
 
-                return cellOriginPos
-
-                + cellSize * float3(k.x, smoothstep(0.2f - .05f, .2f + .05f, k.x * k.y), k.y);
-
-
-
+                return cellOriginPos+ cellSize * float3(k.x, smoothstep(0.2f - .05f, .2f + .05f, k.x * k.y), k.y);
             }
-
             );
 
 
@@ -605,7 +600,7 @@ public class MeshGeneratorQuads : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (!(m_Mf && m_Mf.mesh)) return;
+        if (!(m_Mf && m_Mf.mesh && m_DisplayMeshInfo)) return;
 
         Mesh mesh = m_Mf.mesh;
         Vector3[] vertices = mesh.vertices;
@@ -621,7 +616,7 @@ public class MeshGeneratorQuads : MonoBehaviour
             WingedEdgeMesh wingedEdgeMesh = m_win;
             wingedEdgeMesh.DrawGizmos(m_DisplayMeshVertices, m_DisplayMeshEdges, m_DisplayMeshFaces, transform);
             Gizmos.color = Color.black;
-            style.normal.textColor = Color.blue;
+            style.normal.textColor = Color.green;
 
             /*for (int i = 0; i < quads.Length / 4; i++)
             {
@@ -635,26 +630,35 @@ public class MeshGeneratorQuads : MonoBehaviour
                 Vector3 pt3 = transform.TransformPoint(vertices[index3]);
                 Vector3 pt4 = transform.TransformPoint(vertices[index4]);
 
-                Gizmos.DrawLine(pt1, pt2);
-                Gizmos.DrawLine(pt2, pt3);
-                Gizmos.DrawLine(pt3, pt4);
-                Gizmos.DrawLine(pt4, pt1);
+                if (m_DisplayMeshEdges)
 
-                string str = string.Format("{0} ({1},{2},{3},{4})",
+                {
+                    Gizmos.DrawLine(pt1, pt2);
+                    Gizmos.DrawLine(pt2, pt3);
+                    Gizmos.DrawLine(pt3, pt4);
+                    Gizmos.DrawLine(pt4, pt1);
+                }
+                if (m_DisplayMeshFaces)
+
+                {
+                    string str = string.Format("F{0} ({1},{2},{3},{4})",
                     i, index1, index2, index3, index4);
 
-                Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
-
+                    Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+                    
+                }
             }*/
         }
         else
         {
-            for (int i = 0; i < vertices.Length; i++)
+            if (m_DisplayMeshVertices)
             {
-                Vector3 worldPos = transform.TransformPoint(vertices[i]);
-                Handles.Label(worldPos, i.ToString(), style);
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    Vector3 worldPos = transform.TransformPoint(vertices[i]);
+                    Handles.Label(worldPos, i.ToString(), style);
+                }
             }
-
             Gizmos.color = Color.black;
             style.normal.textColor = Color.blue;
 
@@ -670,16 +674,22 @@ public class MeshGeneratorQuads : MonoBehaviour
                 Vector3 pt3 = transform.TransformPoint(vertices[index3]);
                 Vector3 pt4 = transform.TransformPoint(vertices[index4]);
 
-                Gizmos.DrawLine(pt1, pt2);
-                Gizmos.DrawLine(pt2, pt3);
-                Gizmos.DrawLine(pt3, pt4);
-                Gizmos.DrawLine(pt4, pt1);
+                if (m_DisplayMeshEdges)
 
-                string str = string.Format("{0} ({1},{2},{3},{4})",
+                {
+                    Gizmos.DrawLine(pt1, pt2);
+                    Gizmos.DrawLine(pt2, pt3);
+                    Gizmos.DrawLine(pt3, pt4);
+                    Gizmos.DrawLine(pt4, pt1);
+                }
+                if (m_DisplayMeshFaces)
+
+                {
+                    string str = string.Format("{0} ({1},{2},{3},{4})",
                     i, index1, index2, index3, index4);
 
-                Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
-
+                    Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+                }
             }
         }
     }
