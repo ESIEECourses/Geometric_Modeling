@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using System.Linq;
 
 namespace WingedEdge
 {
@@ -155,17 +156,90 @@ namespace WingedEdge
         {
 
         }
+*/
+
+
+
+
 
         public void CatmullClarkCreateNewPoints(out List<Vector3> facePoints, out List<Vector3> edgePoints, out List<Vector3> vertexPoints)
         {
 
+                    
+            //parcours de toutes les faces de WindegEdgeMesh
+            for(int f = 0; f<faces.size(); ++f){
+
+                        ////STEP 1/////
+
+                //Recupération des points de la face courante
+                List<Vector3> vertexCurrentFace= faces[f].GetVertex();
+            
+                //C0 = Somme de tous les points de la face courante/nb points
+                Vector3 C0 = vertexCurrentFace.Sum()/vertexCurrentFace.size();
+
+
+                //Ajout du point C0 (Face point) de la face courante dans la liste  
+                vertexPoints.Add(C0);
+                
+
+                        ///FIN STEP 1////
+
+
+                        ///STEP 2////
+
+                //Recupération des segments de la face courante
+                List<Vector3> edgesCurrentFace= faces[f].GetEdges();
+
+                //Récupérer une liste des faces adjacentes à la face courante 
+                List<Face> adjFaces;
+                for(int i = 0; i<edgesCurrentFace.size(); ++i)
+                {    
+                    if(edgesCurrentFace[i].rightFace != faces[f] && edgesCurrentFace[i].rightFace != null)
+                    {
+                        adjFaces.Add(edgesCurrentFace[i].rightFace);
+                    }
+                    if(edgesCurrentFace[i].leftFace != faces[f] && edgesCurrentFace[i].leftFace != null)
+                    {
+                        adjFaces.Add(edgesCurrentFace[i].leftFace);
+                    }
+                }
+                            ///FIN STEP 2////
+
+                        
+                        
+                        ///STEP 3////
+
+                //PARCOURS DE LA LISTE DE FACES ADJACENTES 
+                //Boucle
+                for(int i = 1 ; i < adjFaces.size() ; ++i)
+                {
+                    for(int j=0; j< adjFaces[i].size(); ++j)
+                    {
+                        List<Vector3> vertexAdjFace = adjFaces[i].GetVertex();
+                        //// CALCUL DES POINTS Ci ////
+                        //Ci = Somme de tous les points de la face courante/nb points
+                        Vector3 Ci = vertexAdjFace.Sum()/vertexAdjFace.size();
+                        //Ajout du point C0 (Face point) de la face courante dans la liste  
+                        vertexPoints.Add(Ci);
+                    }
+                }
+                                ///FIN STEP 3: La liste Vertex point pour la face courante est remplie ////
+            }
         }
 
+
+
+
+/*
         public void SplitEdge(WingedEdge edge, Vector3 splittingPoint)
         {
 
         }
+*/
 
+
+
+/*
         public void SplitFace(Face face, Vector3 splittingPoint)
         {
 
