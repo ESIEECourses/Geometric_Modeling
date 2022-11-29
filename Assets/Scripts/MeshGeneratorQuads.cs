@@ -6,6 +6,9 @@ using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using WingedEdge;
 
+delegate Vector3 ComputePosDelegate(float kX, float kZ);
+delegate float3 ComputePosDelegate_SIMD(float3 k);
+
 public class MeshGeneratorQuads : MonoBehaviour
 {
     delegate Vector3 ComputePosDelegate(float kx, float kz);
@@ -20,6 +23,7 @@ public class MeshGeneratorQuads : MonoBehaviour
 
     [SerializeField] AnimationCurve m_Profil;
 
+    public WingedEdgeMesh m_win;
 
     void Start()
     {
@@ -91,79 +95,160 @@ public class MeshGeneratorQuads : MonoBehaviour
         //         return OOmega + OmegaP;
         //     }
         // );
-
-        
+        /*
         //Helix
-        // m_Mf.mesh = CreateNormalizedGridXZ(20*6, 10,
-        //     (kX, kZ) =>
-        //     {
-        //         float R = 3;
-        //         float r = 1;
-        //         float theta = 6*2 * Mathf.PI * kX;
-        //         Vector3 OOmega = new Vector3(R * Mathf.Cos(theta), 0, R * Mathf.Sin(theta));
-        //         float alpha = Mathf.PI * 2 * kZ;
-        //         Vector3 OmegaP = r * Mathf.Cos(alpha) * OOmega.normalized + r * Mathf.Sin(alpha) * Vector3.up + Vector3.up*kX*2*r*6;
-        //         return OOmega + OmegaP;
-        //     }
-        // );
+
+        m_Mf.mesh = CreateNormalizedGridXZ(20 * 6, 10,
+
+            (kX, kZ) =>
+
+            {
+
+                float R = 3;
+
+                float r = 1;
+
+                float theta = 6 * 2 * Mathf.PI * kX;
+
+                Vector3 OOmega = new Vector3(R * Mathf.Cos(theta), 0, R * Mathf.Sin(theta));
+
+
+
+                float alpha = Mathf.PI * 2 * kZ;
+
+                Vector3 OmegaP = r * Mathf.Cos(alpha) * OOmega.normalized + r * Mathf.Sin(alpha) * Vector3.up
+
+                                   + Vector3.up * kX * 2 * r * 6;
+
+                return OOmega + OmegaP;
+
+            }
+
+        );
+        */
         
+
+
+
+        // Unity.Mathematics
+
+        /*
+
+        bool bothSides = true;
+
+
+
+        m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
+
+            (bothSides ? 2 : 1) * int3(100, 100, 1),
+
+            (k) =>
+
+            {
+
+                if (bothSides) k = abs((k - .5f) * 2);
+
+
+
+                //return lerp(float3(-5f, 0, -5f), float3(5f, 0, 5f), k.xzy);
+
+                //return lerp(float3(-5, 1, -5), float3(5, 0, 5), float3(k.x, step(.2f, k.x), k.y)) ;
+
+                //return lerp(float3(-5, 1, -5), float3(5, 0, 5), float3(k.x, smoothstep(.2f - 0.05f, .2f + 0.05f, k.x), k.y)) ;
+
+                //return lerp(float3(-5, 1, -5), float3(5, 0, 5), float3(k.x, smoothstep(0.2f - .05f, .2f + .05f, k.x * k.y), k.y));
+
+                return lerp(float3(-5, 1, -5), float3(5, 0, 5), float3(
+
+                    k.x,
+
+                    0.5f * (sin(k.x * 2 * PI * 4) * cos(k.y * 2 * PI * 3) + 1),
+
+                    //smoothstep(0.2f - .05f, .2f + .05f, 0.5f*(sin(k.x*2*PI*4) * cos(k.y*2*PI*3)+1))
+
+                     k.y));
+
+            }
+
+            );
+
+        */
+
+
+
+        // repeated pattern
+
+        int3 nCells = int3(3, 3, 1);
+
+        int3 nSegmentsPerCell = int3(100, 100, 1);
+
+        float3 kStep = float3(1) / (nCells * nSegmentsPerCell);
+
+
+
+        float3 cellSize = float3(1, .5f, 1);
+
+
+
+        m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
+
+            nCells * nSegmentsPerCell,
+
+            (k) =>
+
+            {
+
+                // calculs sur la grille normalis�e
+
+                int3 index = (int3)floor(k / kStep);
+
+                int3 localIndex = index % nSegmentsPerCell;
+
+                int3 indexCell = index / nSegmentsPerCell;
+
+                float3 relIndexCell = (float3)indexCell / nCells;
+
+
+
+                // calculs sur les positions dans l'espace
+
+                /*
+
+                float3 cellOriginPos = lerp(
+
+                    -cellSize * nCells.xzy * .5f,
+
+                    cellSize * nCells.xzy * .5f,
+
+                    relIndexCell.xzy);
+
+                */
+
+
+
+                float3 cellOriginPos = floor(k * nCells).xzy; // Theo's style ... ne prend pas en compte cellSize
+
+
+
+                k = frac(k * nCells);
+
+
+
+                return cellOriginPos+ cellSize * float3(k.x, smoothstep(0.2f - .05f, .2f + .05f, k.x * k.y), k.y);
+            }
+            );
+
 
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
-
-        //Unity.Mathematics
-        // bool bothSides = true;
-        // //Grid avec SIMD
-        // m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
-        //     (bothSides ? 2 : 1) * int3(100,100,1),
-        //     (k) =>
-        //     {
-        //         //Grid simple
-        //         //return lerp(float3(-5f,0,-5f),float3(5f, 0, 5f),k.xzy);
-        //         //Grid with step
-        //         //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,step(.2f, k.x),k.y));
-        //         //Grid with step smooth
-        //         //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x),k.y));
-        //         //Grid with step smooth hyperbolique
-        //         //return lerp(float3(-5,0,-5),float3(5, 0, 5),float3(k.x,smoothstep(.2f -.05f, .2f + .05f, k.x * k.y),k.y));
-        //         //Grid with step
-        //         return lerp(float3(-5, 1, -5), 
-        //                     float3(5, 0, 5), 
-        //                     float3(k.x, 
-        //                            0.5f * (sin(k.x * 2 * PI * 4) * cos(k.y * 2 * PI * 3) + 1),
-        //                            //smoothstep(0.2f - .05f, .2f + .05f, 0.5f*(sin(k.x*2*PI*4) * cos(k.y*2*PI*3)+1))
-        //                            k.y));
-        //     }
-        //     ); 
-
-        //Grid avec le SIMD : Repeated pattern
-        // int3 nCells = int3(3,3,1);
-        // int3 nSegmentsPerCell = int3(100,100,1);
-        // float3 kStep = float3(1) /(nCells * nSegmentsPerCell);
-        // float3 cellSize = float3(1,.5f,1);
-        // m_Mf.mesh = CreateNormalizedGridXZ_SIMD(
-        //     nCells*nSegmentsPerCell,
-        //     (k) =>
-        //     {
-        //         //calculs sur la grille normalisée
-        //         int3 index = (int3)floor(k/kStep);
-        //         int3 localIndex = index % nSegmentsPerCell;
-        //         int3 indexCell = index /nSegmentsPerCell;
-        //         float3 relIndexCell = (float3)indexCell / nCells;
-        //         //calculs sur les positions dans l'espace
-        //         float3 cellOriginPos = lerp(
-        //             -cellSize * nCells.xzy * 0.5f,
-        //             cellSize * nCells.xzy * 0.5f,
-        //             relIndexCell.xzy);
-        //         k = frac(k * nCells);
-        //         return cellOriginPos + cellSize * float3(k.x, smoothstep(.2f - .05f,.2f + .05f,k.x*k.y),k.y);
-        //     }
-        //     );
-
-        //Mesh
-        m_Win = new WingedEdgeMesh(m_Mf.mesh);
-        m_Mf.mesh = m_Win.ConvertToFaceVertexMesh();
+        m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
+        //m_Mf.mesh = CreateBox(new Vector3(3, 3, 3));
+        //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
+        //m_Mf.mesh = CreateStrip(7, new Vector3(4, 1, 3));
+        //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
+        this.m_win = new WingedEdgeMesh(m_Mf.mesh);
+        
     }
 
     string ConvertToCSV(string separator)
@@ -330,42 +415,44 @@ public class MeshGeneratorQuads : MonoBehaviour
     {
         Mesh mesh = new Mesh();
         mesh.name = "normalizedGrid";
-
         Vector3[] vertices = new Vector3[(nSegments.x + 1) * (nSegments.y + 1)];
         int[] quads = new int[nSegments.x * nSegments.y * 4];
 
         //Vertices
+
         int index = 0;
+
         for (int i = 0; i < nSegments.y + 1; i++)
         {
             for (int j = 0; j < nSegments.x + 1; j++)
             {
-                float3 k = float3(j,i,0) / nSegments;
+                float3 k = float3(j, i, 0) / nSegments;
                 vertices[index++] = computePos != null ? computePos(k) : k;
             }
         }
 
         index = 0;
         int offset = 0;
-        int nextOffset = offset;
+        int offsetNextLine = offset;
+
         //Quads
         for (int i = 0; i < nSegments.y; i++)
         {
-            nextOffset = offset + nSegments.x + 1;
+            offsetNextLine += nSegments.x + 1;
             for (int j = 0; j < nSegments.x; j++)
+
             {
                 quads[index++] = offset + j;
-                quads[index++] = nextOffset + j;
-                quads[index++] = nextOffset + j + 1;
+                quads[index++] = offsetNextLine + j;
+                quads[index++] = offsetNextLine + j + 1;
                 quads[index++] = offset + j + 1;
             }
-            offset = nextOffset;
+            offset = offsetNextLine;
         }
-
         mesh.vertices = vertices;
         mesh.SetIndices(quads, MeshTopology.Quads, 0);
-
         return mesh;
+
     }
 
     Mesh CreateBox(Vector3 halfSize)
@@ -374,7 +461,6 @@ public class MeshGeneratorQuads : MonoBehaviour
         mesh.name = "box";
 
         Vector3[] vertices = new Vector3[8];
-        
 
         int index = 0;
         vertices[index++] = new Vector3( halfSize.x,-halfSize.y, halfSize.z); // vertice du haut
@@ -386,7 +472,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         vertices[index++] = new Vector3( halfSize.x, halfSize.y,-halfSize.z); // vertice du bas
         vertices[index++] = new Vector3(-halfSize.x, halfSize.y,-halfSize.z); // vertice du bas
         vertices[index++] = new Vector3(-halfSize.x, halfSize.y, halfSize.z); // vertice du bas
-
+        //int[] quads = new int[24] { 0, 3, 7, 4, 3, 2, 6, 7, 2, 1, 5, 6, 1, 0, 4, 5, 2, 3, 0, 1, 5, 4, 7, 6 };
         int[] quads = new int[] {
             0,3,2,1,//Face Basse
             4,5,6,7,//Face Haute
@@ -550,7 +636,7 @@ public class MeshGeneratorQuads : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (!(m_Mf && m_Mf.mesh)) return;
+        if (!(m_Mf && m_Mf.mesh && m_DisplayMeshInfo)) return;
 
          //WingedEdgeDrawGizmos
         if (m_Win != null)
@@ -567,37 +653,87 @@ public class MeshGeneratorQuads : MonoBehaviour
         style.fontSize = 15;
         style.normal.textColor = Color.red;
 
-        for (int i = 0; i < vertices.Length; i++)
+        //WingedEdgeDrawGizmos
+        if (m_win != null)
         {
-            Vector3 worldPos =  transform.TransformPoint(vertices[i]);
-            Handles.Label(worldPos, i.ToString(), style);
+            WingedEdgeMesh wingedEdgeMesh = m_win;
+            wingedEdgeMesh.DrawGizmos(m_DisplayMeshVertices, m_DisplayMeshEdges, m_DisplayMeshFaces, transform);
+            Gizmos.color = Color.black;
+            style.normal.textColor = Color.green;
+
+            /*for (int i = 0; i < quads.Length / 4; i++)
+            {
+                int index1 = quads[4 * i];
+                int index2 = quads[4 * i + 1];
+                int index3 = quads[4 * i + 2];
+                int index4 = quads[4 * i + 3];
+
+                Vector3 pt1 = transform.TransformPoint(vertices[index1]);
+                Vector3 pt2 = transform.TransformPoint(vertices[index2]);
+                Vector3 pt3 = transform.TransformPoint(vertices[index3]);
+                Vector3 pt4 = transform.TransformPoint(vertices[index4]);
+
+                if (m_DisplayMeshEdges)
+
+                {
+                    Gizmos.DrawLine(pt1, pt2);
+                    Gizmos.DrawLine(pt2, pt3);
+                    Gizmos.DrawLine(pt3, pt4);
+                    Gizmos.DrawLine(pt4, pt1);
+                }
+                if (m_DisplayMeshFaces)
+
+                {
+                    string str = string.Format("F{0} ({1},{2},{3},{4})",
+                    i, index1, index2, index3, index4);
+
+                    Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+                    
+                }
+            }*/
         }
-
-        Gizmos.color = Color.black;
-        style.normal.textColor = Color.blue;
-
-        for (int i = 0; i < quads.Length/4; i++)
+        else
         {
-            int index1 = quads[4 * i];
-            int index2 = quads[4 * i+1];
-            int index3 = quads[4 * i+2];
-            int index4 = quads[4 * i+3];
+            if (m_DisplayMeshVertices)
+            {
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    Vector3 worldPos = transform.TransformPoint(vertices[i]);
+                    Handles.Label(worldPos, i.ToString(), style);
+                }
+            }
+            Gizmos.color = Color.black;
+            style.normal.textColor = Color.blue;
 
-            Vector3 pt1 = transform.TransformPoint(vertices[index1]);
-            Vector3 pt2 = transform.TransformPoint(vertices[index2]);
-            Vector3 pt3 = transform.TransformPoint(vertices[index3]);
-            Vector3 pt4 = transform.TransformPoint(vertices[index4]);
+            for (int i = 0; i < quads.Length / 4; i++)
+            {
+                int index1 = quads[4 * i];
+                int index2 = quads[4 * i + 1];
+                int index3 = quads[4 * i + 2];
+                int index4 = quads[4 * i + 3];
 
-            Gizmos.DrawLine(pt1, pt2);
-            Gizmos.DrawLine(pt2, pt3);
-            Gizmos.DrawLine(pt3, pt4);
-            Gizmos.DrawLine(pt4 , pt1);
+                Vector3 pt1 = transform.TransformPoint(vertices[index1]);
+                Vector3 pt2 = transform.TransformPoint(vertices[index2]);
+                Vector3 pt3 = transform.TransformPoint(vertices[index3]);
+                Vector3 pt4 = transform.TransformPoint(vertices[index4]);
 
-            string str = string.Format("{0} ({1},{2},{3},{4})",
-                i, index1, index2, index3, index4);
+                if (m_DisplayMeshEdges)
 
-            Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+                {
+                    Gizmos.DrawLine(pt1, pt2);
+                    Gizmos.DrawLine(pt2, pt3);
+                    Gizmos.DrawLine(pt3, pt4);
+                    Gizmos.DrawLine(pt4, pt1);
+                }
+                if (m_DisplayMeshFaces)
 
+                {
+                    string str = string.Format("{0} ({1},{2},{3},{4})",
+                    i, index1, index2, index3, index4);
+
+                    Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
+                }
+            }
         }
     }
 }
