@@ -171,6 +171,7 @@ namespace WingedEdge
             vertices = new List<Vertex>();
             edges = new List<WingedEdge>();
             faces = new List<Face>();
+            //On complète la liste de vertices.
             Vector3[] tmpVertices = mesh.vertices;
             for (int i = 0; i < tmpVertices.Length; i++)
             {
