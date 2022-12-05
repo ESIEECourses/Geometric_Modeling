@@ -6,6 +6,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using WingedEdge;
+using HalfEdge;
 
 delegate Vector3 ComputePosDelegate(float kX, float kZ);
 delegate float3 ComputePosDelegate_SIMD(float3 k);
@@ -23,6 +24,7 @@ public class MeshGeneratorQuads : MonoBehaviour
     [SerializeField] AnimationCurve m_Profil;
 
     public WingedEdgeMesh m_win;
+    public HalfEdgeMesh m_win2;
 
     void Start()
     {
@@ -239,13 +241,14 @@ public class MeshGeneratorQuads : MonoBehaviour
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
-        m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
-        //m_Mf.mesh = CreateBox(new Vector3(3, 3, 3));
+        //m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
+        m_Mf.mesh = CreateBox(new Vector3(3, 3, 3));
         //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
         //m_Mf.mesh = CreateStrip(7, new Vector3(4, 1, 3));
         //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
-        this.m_win = new WingedEdgeMesh(m_Mf.mesh);
-        
+        //this.m_win = new WingedEdgeMesh(m_Mf.mesh);
+        this.m_win2 = new HalfEdgeMesh(m_Mf.mesh);
+
     }
 
     string ConvertToCSV(string separator)
@@ -612,6 +615,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         style.fontSize = 15;
         style.normal.textColor = Color.red;
 
+        //Debug.Log(m_win2 != null);
         //WingedEdgeDrawGizmos
         if (m_win != null)
         {
@@ -650,6 +654,15 @@ public class MeshGeneratorQuads : MonoBehaviour
                     
                 }
             }*/
+        }//HalfEdgeMeshDrawGizmos
+
+        else if (m_win2 != null)
+        {
+            /*HalfEdgeMesh halfEdgeMesh = m_win2;
+            halfEdgeMesh.DrawGizmos(m_DisplayMeshVertices, m_DisplayMeshEdges, m_DisplayMeshFaces, transform);
+            Gizmos.color = Color.black;
+            style.normal.textColor = Color.green;
+            */
         }
         else
         {

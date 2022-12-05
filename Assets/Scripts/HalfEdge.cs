@@ -40,6 +40,36 @@ namespace HalfEdge
         {
             this.index = index;
         }
+        public List<HalfEdge> GetEdges()
+        {
+            List<HalfEdge> faceEdges = new List<HalfEdge>();
+            HalfEdge currEdge = null;
+            HalfEdge startEdge = this.edge;
+            faceEdges.Add(startEdge);
+            //Edge CW
+
+            currEdge = edge.nextEdge;
+            while (currEdge != startEdge)
+            {
+                faceEdges.Add(currEdge);
+                currEdge = currEdge.nextEdge;
+
+            }
+            return faceEdges;
+        }
+        public List<Vertex> GetVertex()
+        {
+            List<HalfEdge> faceEdges = GetEdges();
+            List<Vertex> faceVertices = new List<Vertex>();
+            //Vertice CW
+            HalfEdge mon_Edge = null;
+            for (int i = 0; i < faceEdges.Count; i++)
+            {
+                mon_Edge = faceEdges[i];
+                faceVertices.Add(mon_Edge.sourceVertex);
+            }
+            return faceVertices;
+        }
     }
     public class HalfEdgeMesh
     {
@@ -114,8 +144,8 @@ namespace HalfEdge
                     else
                     {
                         //Recréer une nouvelle Halfedge, qui sera cette fois une twinEdge
-                        halfEdge = new HalfEdge(edges.Count, startVertex, newFace, null, null, halfEdge);
-                        halfEdge.twinEdge = halfEdge;
+                        HalfEdge twinEdge = new HalfEdge(edges.Count, startVertex, newFace, null, null, halfEdge);
+                        halfEdge.twinEdge = twinEdge;
                         edges.Add(halfEdge);
                     }
                     //On ajoute la edge associée à la face.
@@ -138,6 +168,7 @@ namespace HalfEdge
                     }
                 }
             }
+            GUIUtility.systemCopyBuffer = ConvertToCSVFormat("\t");
         }
         public Mesh ConvertToFaceVertexMesh()
         {
@@ -147,11 +178,77 @@ namespace HalfEdge
         }
         public string ConvertToCSVFormat(string separator = "\t")
         {
+            if (this == null) return "";
+            Debug.Log("#################      HalfEdgeMesh ConvertTOCSVFormat     #################");
+
+            // Attributs
+
             string str = "";
-            //magic happens
+
+            List<string> strings = new List<string>();
+
+            // Récupération des vertices dans le fichier CSV
+
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Vector3 pos = vertices[i].position;
+                strings.Add(vertices[i].index + separator
+                    + pos.x.ToString("N03") + " "
+                    + pos.y.ToString("N03") + " "
+                    + pos.z.ToString("N03") + separator
+                    + vertices[i].outgoingEdge.index
+                    + separator + separator);
+            }
+
+            for (int i = vertices.Count; i < edges.Count; i++)
+                strings.Add(separator + separator + separator + separator);
+
+            // Récupération des edges dans le fichier CSV
+
+            for (int i = 0; i < edges.Count; i++)
+            {
+                strings[i] += edges[i].index + separator
+                    + edges[i].sourceVertex.index + separator
+                    + edges[i].face.index + separator
+                    + edges[i].prevEdge.index + separator
+                    + edges[i].nextEdge.index + separator
+                    + edges[i].twinEdge.index + separator + separator;
+            }
+
+            // Récupération des faces dans le fichier CSV
+
+            for (int i = 0; i < faces.Count; i++)
+            {
+                List<HalfEdge> faceEdges = faces[i].GetEdges();
+                List<Vertex> faceVertex = faces[i].GetVertex();
+
+                List<int> edgesIndex = new List<int>();
+                List<int> vertexIndex = new List<int>();
+                //Edge CW
+                foreach (var edge in faceEdges)
+                    edgesIndex.Add(edge.index);
+                //Vertice CW
+                foreach (var vertice in faceVertex)
+                    vertexIndex.Add(vertice.index);
+
+
+                strings[i] += faces[i].index + separator
+                    + faces[i].edge.index + separator
+                    + string.Join(" ", edgesIndex) + separator
+                    + string.Join(" ", vertexIndex) + separator + separator;
+            }
+
+            // Mise en page du fichier CSV
+
+            str = "Vertex" + separator + separator + separator + separator + "HalfEges" + separator + separator + separator + separator + separator + separator + separator + "Faces\n"
+                + "Index" + separator + "Position" + separator + "outgoingEdge" + separator + separator +
+                "Index" + separator + "sourceVertex" + separator + "Face" + separator + "prevEdge" + separator + "nextEdge" + separator + "twinEdge" + separator + separator +
+                "Index" + separator + "Edge" + separator + "CW Edges" + separator + "CW Vertices\n"
+                + string.Join("\n", strings);
+            Debug.Log(str);
             return str;
         }
-        public void DrawGizmos(bool drawVertices, bool drawEdges, bool drawFaces)
+        public void DrawGizmos(bool drawVertices, bool drawEdges, bool drawFaces, Transform transform)
         {
             //magic happens
         }
