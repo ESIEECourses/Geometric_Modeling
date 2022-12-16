@@ -5,6 +5,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using WingedEdge;
+using HalfEdge;
 
 delegate Vector3 ComputePosDelegate(float kX, float kZ);
 delegate float3 ComputePosDelegate_SIMD(float3 k);
@@ -24,6 +25,7 @@ public class MeshGeneratorQuads : MonoBehaviour
     [SerializeField] AnimationCurve m_Profil;
 
     public WingedEdgeMesh m_win;
+    public HalfEdgeMesh m_win2;
 
     void Start()
     {
@@ -166,13 +168,19 @@ public class MeshGeneratorQuads : MonoBehaviour
         /*GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
         Debug.Log(ConvertToCSV("\t"));*/
 
-        m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
-        //m_Mf.mesh = CreateBox(new Vector3(3, 3, 3));
+        //m_Mf.mesh = CreateRegularPolygon(new Vector3(8, 0, 8), 20);
+        m_Mf.mesh = CreateBox(new Vector3(3, 3, 3));
         //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
         //m_Mf.mesh = CreateStrip(7, new Vector3(4, 1, 3));
         //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
         this.m_win = new WingedEdgeMesh(m_Mf.mesh);
         m_win.SubdivideCatmullClark();
+
+        //this.m_win = new WingedEdgeMesh(m_Mf.mesh);
+        //m_Mf.mesh = m_win.ConvertToFaceVertexMesh();
+
+        //this.m_win2 = new HalfEdgeMesh(m_Mf.mesh);
+        //m_Mf.mesh = m_win2.ConvertToFaceVertexMesh();
     }
 
     string ConvertToCSV(string separator)
@@ -577,6 +585,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         style.fontSize = 15;
         style.normal.textColor = Color.red;
 
+        //Debug.Log(m_win2 != null);
         //WingedEdgeDrawGizmos
         if (m_win != null)
         {
@@ -584,37 +593,15 @@ public class MeshGeneratorQuads : MonoBehaviour
             wingedEdgeMesh.DrawGizmos(m_DisplayMeshVertices, m_DisplayMeshEdges, m_DisplayMeshFaces, transform);
             Gizmos.color = Color.black;
             style.normal.textColor = Color.green;
-
-            /*for (int i = 0; i < quads.Length / 4; i++)
-            {
-                int index1 = quads[4 * i];
-                int index2 = quads[4 * i + 1];
-                int index3 = quads[4 * i + 2];
-                int index4 = quads[4 * i + 3];
-
-                Vector3 pt1 = transform.TransformPoint(vertices[index1]);
-                Vector3 pt2 = transform.TransformPoint(vertices[index2]);
-                Vector3 pt3 = transform.TransformPoint(vertices[index3]);
-                Vector3 pt4 = transform.TransformPoint(vertices[index4]);
-
-                if (m_DisplayMeshEdges)
-
-                {
-                    Gizmos.DrawLine(pt1, pt2);
-                    Gizmos.DrawLine(pt2, pt3);
-                    Gizmos.DrawLine(pt3, pt4);
-                    Gizmos.DrawLine(pt4, pt1);
-                }
-                if (m_DisplayMeshFaces)
-
-                {
-                    string str = string.Format("F{0} ({1},{2},{3},{4})",
-                    i, index1, index2, index3, index4);
-
-                    Handles.Label((pt1 + pt2 + pt3 + pt4) / 4.0f, str, style);
-                    
-                }
-            }*/
+        }
+        //HalfEdgeMeshDrawGizmos
+        else if (m_win2 != null)
+        {
+            HalfEdgeMesh halfEdgeMesh = m_win2;
+            halfEdgeMesh.DrawGizmos(m_DisplayMeshVertices, m_DisplayMeshEdges, m_DisplayMeshFaces, transform);
+            Gizmos.color = Color.black;
+            style.normal.textColor = Color.green;
+            
         }
         else
         {
