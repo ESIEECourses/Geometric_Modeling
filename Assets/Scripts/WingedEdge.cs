@@ -206,21 +206,9 @@ namespace WingedEdge
             ///FIN STEP 1////
 
             List<Vector3> midPoints = new List<Vector3>();
-            edgePoints = new List<Vector3>();
             ///STEP 2////
             //parcours de tous les edges de WindegEdgeMesh
             for(int e = 0; e<edges.Count(); ++e){
-                
-                //E0 = Somme des points de l'edge et des facepoints des faces adjacentes
-                float sumX = 0,sumY = 0,sumZ = 0;
-                sumX = edges[e].startVertex.GetPosition().x + edges[e].endVertex.GetPosition().x + facePoints[edges[e].leftFace.index].x + facePoints[edges[e].rightFace.index].x;
-                sumY = edges[e].startVertex.GetPosition().y + edges[e].endVertex.GetPosition().y + facePoints[edges[e].leftFace.index].y + facePoints[edges[e].rightFace.index].y;
-                sumZ = edges[e].startVertex.GetPosition().z + edges[e].endVertex.GetPosition().z + facePoints[edges[e].leftFace.index].z + facePoints[edges[e].rightFace.index].z;
-                Vector3 E0 = new Vector3(   sumX/4,
-                                            sumY/4,
-                                            sumZ/4);
-                //Ajout du point E0 (Edge point) de l'edge courant dans la liste
-                edgePoints.Add(E0);
 
                 //Calcul mid points
                 float midX = 0,midY = 0,midZ = 0;
@@ -232,6 +220,29 @@ namespace WingedEdge
                                             midZ);
                 //Ajout du point m0 (Mid point) de l'edge courant dans la liste
                 midPoints.Add(m0);
+            }
+
+            edgePoints = new List<Vector3>();
+            //parcours de tous les edges de WindegEdgeMesh
+            for(int e = 0; e<edges.Count(); ++e){
+                
+                //E0 = Somme des points de l'edge et des facepoints des faces adjacentes
+                float sumX = 0,sumY = 0,sumZ = 0;
+                if(facePoints[edges[e].leftFace.index] != null && facePoints[edges[e].rightFace.index] != null){
+                    sumX = (edges[e].startVertex.GetPosition().x + edges[e].endVertex.GetPosition().x + facePoints[edges[e].leftFace.index].x + facePoints[edges[e].rightFace.index].x)/4;
+                    sumY = (edges[e].startVertex.GetPosition().y + edges[e].endVertex.GetPosition().y + facePoints[edges[e].leftFace.index].y + facePoints[edges[e].rightFace.index].y)/4;
+                    sumZ = (edges[e].startVertex.GetPosition().z + edges[e].endVertex.GetPosition().z + facePoints[edges[e].leftFace.index].z + facePoints[edges[e].rightFace.index].z)/4;
+                }
+                else{//edge en bordure
+                    sumX = midPoints[e].x;
+                    sumY = midPoints[e].y;
+                    sumZ = midPoints[e].z;
+                }
+                Vector3 E0 = new Vector3(   sumX,
+                                            sumY,
+                                            sumZ);
+                //Ajout du point E0 (Edge point) de l'edge courant dans la liste
+                edgePoints.Add(E0);
             }
             ///FIN STEP 2////           
 
