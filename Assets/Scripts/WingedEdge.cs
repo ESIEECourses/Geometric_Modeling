@@ -28,6 +28,7 @@ namespace WingedEdge
             this.startCCWEdge = startCCWEdge;
             this.endCWEdge = endCWEdge;
             this.endCCWEdge = endCCWEdge;
+            
         }
         public WingedEdge FindEndCWBorder()
         {
@@ -85,6 +86,10 @@ namespace WingedEdge
         {
             this.index = index;
             this.position = position;
+        }
+        public Vector3 GetPosition()
+        {
+            return this.position;
         }
     }
     public class Face
@@ -152,11 +157,16 @@ namespace WingedEdge
         public List<WingedEdge> edges = null;
         public List<Face> faces = null;
         //MY CODE
-        /*public void SubdivideCatmullClark()
+        public void SubdivideCatmullClark()
         {
+            List<Vector3> facePoints = new List<Vector3>();
+            List<Vector3> edgePoints = new List<Vector3>();
+            List<Vector3> vertexPoints = new List<Vector3>();
 
+            //facePoints.Add(new Vector3(-1.5f,4.0f,.5f));
+            CatmullClarkCreateNewPoints(out facePoints,out edgePoints,out vertexPoints);
         }
-*/
+
 
 
 
@@ -164,70 +174,111 @@ namespace WingedEdge
 
         public void CatmullClarkCreateNewPoints(out List<Vector3> facePoints, out List<Vector3> edgePoints, out List<Vector3> vertexPoints)
         {
-
-                    
+            facePoints = new List<Vector3>();
+            ////STEP 1/////
             //parcours de toutes les faces de WindegEdgeMesh
-            for(int f = 0; f<faces.size(); ++f){
-
-                        ////STEP 1/////
+            for(int f = 0; f<faces.Count(); ++f){    
 
                 //Recupération des points de la face courante
-                List<Vector3> vertexCurrentFace= faces[f].GetVertex();
+                List<Vertex> vertexCurrentFace = faces[f].GetVertex();
+                
+                //Recuperation des coordonnées de la liste de points de la face courante
+                List<Vector3> positionsVertexCurrentFace = new List<Vector3>();
+                for(int v = 0; v<vertexCurrentFace.Count(); ++v){
+                    positionsVertexCurrentFace.Add(vertexCurrentFace[v].GetPosition())   ;
+                }
             
                 //C0 = Somme de tous les points de la face courante/nb points
-                Vector3 C0 = vertexCurrentFace.Sum()/vertexCurrentFace.size();
-
-
-                //Ajout du point C0 (Face point) de la face courante dans la liste  
-                vertexPoints.Add(C0);
+                float sumX = 0,sumY = 0,sumZ = 0,nbPoints = 0;
+                for(int p = 0; p<positionsVertexCurrentFace.Count(); ++p){
+                    sumX += positionsVertexCurrentFace[p].x;
+                    sumY += positionsVertexCurrentFace[p].y;
+                    sumZ += positionsVertexCurrentFace[p].z;
+                    nbPoints += 1;
+                }
+                Vector3 C0 = new Vector3(   sumX/nbPoints,
+                                            sumY/nbPoints,
+                                            sumZ/nbPoints);
                 
-
-                        ///FIN STEP 1////
-
-
-                        ///STEP 2////
-
-                //Recupération des segments de la face courante
-                List<Vector3> edgesCurrentFace= faces[f].GetEdges();
-
-                //Récupérer une liste des faces adjacentes à la face courante 
-                List<Face> adjFaces;
-                for(int i = 0; i<edgesCurrentFace.size(); ++i)
-                {    
-                    if(edgesCurrentFace[i].rightFace != faces[f] && edgesCurrentFace[i].rightFace != null)
-                    {
-                        adjFaces.Add(edgesCurrentFace[i].rightFace);
-                    }
-                    if(edgesCurrentFace[i].leftFace != faces[f] && edgesCurrentFace[i].leftFace != null)
-                    {
-                        adjFaces.Add(edgesCurrentFace[i].leftFace);
-                    }
-                }
-                            ///FIN STEP 2////
-
-                        
-                        
-                        ///STEP 3////
-
-                //PARCOURS DE LA LISTE DE FACES ADJACENTES 
-                //Boucle
-                for(int i = 1 ; i < adjFaces.size() ; ++i)
-                {
-                    for(int j=0; j< adjFaces[i].size(); ++j)
-                    {
-                        List<Vector3> vertexAdjFace = adjFaces[i].GetVertex();
-                        //// CALCUL DES POINTS Ci ////
-                        //Ci = Somme de tous les points de la face courante/nb points
-                        Vector3 Ci = vertexAdjFace.Sum()/vertexAdjFace.size();
-                        //Ajout du point C0 (Face point) de la face courante dans la liste  
-                        vertexPoints.Add(Ci);
-                    }
-                }
-                                ///FIN STEP 3: La liste Vertex point pour la face courante est remplie ////
+                //Ajout du point C0 (Face point) de la face courante dans la liste  
+                facePoints.Add(C0);       
             }
-        }
+            ///FIN STEP 1////
 
+            List<Vector3> midPoints = new List<Vector3>();
+            edgePoints = new List<Vector3>();
+            ///STEP 2////
+            //parcours de tous les edges de WindegEdgeMesh
+            for(int e = 0; e<edges.Count(); ++e){
+                
+                //E0 = Somme des points de l'edge et des facepoints des faces adjacentes
+                float sumX = 0,sumY = 0,sumZ = 0;
+                sumX = edges[e].startVertex.GetPosition().x + edges[e].endVertex.GetPosition().x + facePoints[edges[e].leftFace.index].x + facePoints[edges[e].rightFace.index].x;
+                sumY = edges[e].startVertex.GetPosition().y + edges[e].endVertex.GetPosition().y + facePoints[edges[e].leftFace.index].y + facePoints[edges[e].rightFace.index].y;
+                sumZ = edges[e].startVertex.GetPosition().z + edges[e].endVertex.GetPosition().z + facePoints[edges[e].leftFace.index].z + facePoints[edges[e].rightFace.index].z;
+                Vector3 E0 = new Vector3(   sumX/4,
+                                            sumY/4,
+                                            sumZ/4);
+                //Ajout du point E0 (Edge point) de l'edge courant dans la liste
+                edgePoints.Add(E0);
 
+                //Calcul mid points
+                float midX = 0,midY = 0,midZ = 0;
+                midX = edges[e].startVertex.GetPosition().x + edges[e].endVertex.GetPosition().x;
+                midY = edges[e].startVertex.GetPosition().y + edges[e].endVertex.GetPosition().y;
+                midZ = edges[e].startVertex.GetPosition().z + edges[e].endVertex.GetPosition().z;
+                Vector3 m0 = new Vector3(   midX,
+                                            midY,
+                                            midZ);
+                //Ajout du point m0 (Mid point) de l'edge courant dans la liste
+                midPoints.Add(m0);
+            }
+            ///FIN STEP 2////           
+
+            vertexPoints = new List<Vector3>();                       
+            ///STEP 3////
+            //parcours de tous les vertices de WindegEdgeMesh
+            for(int v = 0; v<vertices.Count(); ++v){
+                
+                
+            }
+
+                // //PARCOURS DE LA LISTE DE FACES ADJACENTES 
+                // //Récupération des edges des faces adjacantes 
+                
+                // for(int a = 0 ; a < adjFaces.Count() ; ++a)
+                // {
+                //     List<WingedEdge> edgesFromAdjFaces = adjFaces[a].GetEdges();
+                    
+                //     //Récupération des vertex des edges adjacantes
+                //     for(int e = 0; e < edgesFromAdjFaces.Count(); ++e)
+                //     {
+                //         List<Vertex> vertexFromEdgesFromAdjFaces = new List<Vertex>();
+                //         if(!vertexFromEdgesFromAdjFaces.Contains(edgesFromAdjFaces.GetFirstVertice())){
+                //             vertexFromEdgesFromAdjFaces.Add(edgesFromAdjFaces.GetFirstVertice());
+                //         }
+                //         //Recuperation des coordonnées de la liste de points de la face courante
+                //         List<Vector3> positionsFromVertexFromEdgesFromAdjFaces = new List<Vector3>();
+                //         for(int v = 0; v<vertexFromEdgesFromAdjFaces.Count(); ++v){
+                //             positionsFromVertexFromEdgesFromAdjFaces.Add(vertexFromEdgesFromAdjFaces[v].GetPosition())   ;
+                //         }
+
+                //         //Ci = Somme de tous les points de la face courante/nb points
+                //         float sumXx = 0,sumYy = 0,sumZz = 0,nbPts = 0;
+                //         for(int p = 0; p<positionsFromVertexFromEdgesFromAdjFaces.Count(); ++p){
+                //             sumXx += positionsFromVertexFromEdgesFromAdjFaces[p].x;
+                //             sumYy += positionsFromVertexFromEdgesFromAdjFaces[p].y;
+                //             sumZz += positionsFromVertexFromEdgesFromAdjFaces[p].z;
+                //             nbPts += 1;
+                //         }
+                //         Vector3 Ci = new Vector3(sumXx/nbPts,sumYy/nbPts,sumZz/nbPts);
+
+                //         //Ajout des points Ci (Face point) de la face courante dans la liste  
+                //         vertexPoints.Add(Ci);
+                //     }
+                // }
+                                ///FIN STEP 3: La liste Vertex point pour la face courante est remplie ////
+        }   
 
 
 /*
