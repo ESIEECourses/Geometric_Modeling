@@ -417,6 +417,7 @@ namespace WingedEdge
             vertices = new List<Vertex>();
             edges = new List<WingedEdge>();
             faces = new List<Face>();
+            //On complète la liste de vertices.
             Vector3[] tmpVertices = mesh.vertices;
             for (int i = 0; i < tmpVertices.Length; i++)
             {
@@ -583,16 +584,16 @@ namespace WingedEdge
             List<string> strings = new List<string>();
 
             //Vertices
-            foreach (var vertice in vertices)
+            for (int i=0; i<vertices.Count;i++)
             {
-                List<WingedEdge> edges_vertice = edges.FindAll(edge => edge.startVertex == vertice || edge.endVertex == vertice);
+                List<WingedEdge> edges_vertice = edges.FindAll(edge => edge.startVertex == vertices[i] || edge.endVertex == vertices[i]);
                 int[] edges_adj = new int[edges_vertice.Count];
-                for (int i = 0; i < edges_vertice.Count; i++)
+                for (int j = 0; j < edges_vertice.Count; j++)
                 {
-                    edges_adj[i] = edges_vertice[i].index;
+                    edges_adj[j] = edges_vertice[j].index;
                 }
-                Vector3 pos = vertice.position;
-                strings.Add(vertice.index + separator
+                Vector3 pos = vertices[i].position;
+                strings.Add(vertices[i].index + separator
                     + pos.x.ToString("N03") + " "
                     + pos.y.ToString("N03") + " "
                     + pos.z.ToString("N03") + separator
@@ -628,6 +629,7 @@ namespace WingedEdge
                 }
                 strings[i] += faces[i].index + separator + string.Join(" ", face_edges) + separator + separator;
             }
+            //Présentation CSV
             string str = "Vertex" + separator + separator + separator + separator + "WingedEdges" + separator + separator + separator + separator + separator + separator + "Faces\n"
                 + "Index" + separator + "Position" + separator + "Edge" + separator + separator +
                 "Index" + separator + "Start Vertex" + separator + "End Vertex" + separator + "Left Face" + separator + "Right Face" + separator + "Start CCW Edge" + separator + "Start CW Edge" + separator + "End CW Edge" + separator + "End CCW Edge" + separator + separator +
@@ -641,15 +643,12 @@ namespace WingedEdge
 
             Gizmos.color = Color.black;
             GUIStyle style = new GUIStyle();
-            GUIStyle style2 = new GUIStyle();
             style.fontSize = 12;
-            style2.fontSize = 12;
 
             //vertices
             if (drawVertices)
             {
                 style.normal.textColor = Color.red;
-                style2.normal.textColor = Color.black;
                 for (int i = 0; i < vertices.Count; i++)
                 {
                     Vector3 worldPos = transform.TransformPoint(vertices[i].position);
@@ -678,7 +677,6 @@ namespace WingedEdge
             if (drawEdges)
             {
                 style.normal.textColor = Color.blue;
-                style2.normal.textColor = Color.cyan;
                 for (int i = 0; i < edges.Count; i++)
                 {
                     Vector3 start = transform.TransformPoint(edges[i].startVertex.position);
