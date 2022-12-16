@@ -76,6 +76,52 @@ namespace WingedEdge
             }
             return startCCW;
         }
+        public WingedEdge FindEndCWBorder()
+        {
+            //Nous avons trois cas diff�rents, dont deux o� il n'y a pas de leftface pour la edge courante
+            //Le troisi�me cas est d�j� trait�e par la premi�re boucle du cosntructeur
+
+            //Par cons�quent si pas de LeftFace, on skip
+            if (this.leftFace != null)
+            {
+                return null;
+            }
+            WingedEdge endCW = this.endCCWEdge;
+            while(endCW.leftFace!=null)
+            {
+                if(endCW.endVertex == this.endVertex)
+                {
+                    endCW = endCW.endCCWEdge;
+                }
+                else
+                {
+                    endCW = endCW.startCCWEdge;
+                }
+            }
+            return endCW;
+
+        }
+        public WingedEdge FindStartCCWBorder()
+        {
+            //De m�me que FindEndCWBorder en parcourant dans l'autre sens
+            if (this.leftFace != null)
+            {
+                return null;
+            }
+            WingedEdge startCCW = this.startCWEdge;
+            while (startCCW.leftFace != null)
+            {
+                if (startCCW.startVertex == this.startVertex)
+                {
+                    startCCW = startCCW.startCCWEdge;
+                }
+                else
+                {
+                    startCCW = startCCW.endCWEdge;
+                }
+            }
+            return startCCW;
+        }
 
         public List<WingedEdge> GetAdjEdges() 
         {
@@ -202,10 +248,6 @@ namespace WingedEdge
         public List<WingedEdge> edges = null;
         public List<Face> faces = null;
         //MY CODE
-
-
-        //Recherches des Edges adjacents
-        
         public void SubdivideCatmullClark()
         {
             List<Vector3> facePoints = new List<Vector3>();
