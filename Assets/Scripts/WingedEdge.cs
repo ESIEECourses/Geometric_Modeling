@@ -174,11 +174,144 @@ namespace WingedEdge
 
         
     }
+
     public class WingedEdgeMesh
     {
         public List<Vertex> vertices = null;
         public List<WingedEdge> edges = null;
         public List<Face> faces = null;
+
+        public bool isValid = false;
+        public WingedEdgeMesh(Mesh mesh)
+        {// constructeur prenant un mesh Vertex-Face en paramètre
+            int nSides;
+            switch (mesh.GetTopology(0))
+            {
+                case MeshTopology.Quads:
+                    nSides = 4;
+                    break;
+                case MeshTopology.Triangles:
+                    nSides = 3;
+                    break;
+                default:
+                    isValid = false;
+                    return;
+            }
+            isValid = true;
+            vertices = new List<Vertex>();
+            edges = new List<WingedEdge>();
+            faces = new List<Face>();
+            //On complète la liste de vertices.
+            Vector3[] tmpVertices = mesh.vertices;
+            for (int i = 0; i < tmpVertices.Length; i++)
+            {
+                vertices.Add(new Vertex(i, tmpVertices[i]));
+            }
+
+            //On récupère les quads et on les parcourt pour trouver les meshs
+            int[] indexes = mesh.GetIndices(0);
+            Dictionary<ulong, WingedEdge> dicoWingedEdges = new Dictionary<ulong, WingedEdge>();
+            List<WingedEdge> faceEdges = new List<WingedEdge>();
+
+            for (int i = 0; i < indexes.Length / nSides; i++)
+            {
+                int[] faceIndexes = new int[nSides];
+                for (int k = 0; k < nSides; k++)
+                {
+                    faceIndexes[k] = indexes[nSides * i + k];
+                }
+
+                Face newFace = new Face(faces.Count);
+                //On complete la liste de face 
+                faces.Add(newFace);
+
+                //On complete startVertex, endVertex, leftFace et rightFace
+                for (int j = 0; j < faceIndexes.Length; j++)
+                {
+                    int startIndex = faceIndexes[j];
+                    int endIndex = faceIndexes[(j + 1) % faceIndexes.Length];
+                    Vertex startVertex = vertices[startIndex];
+                    Vertex endVertex = vertices[endIndex];
+
+                    // creer un dictionnaire cle a laquell est associé une seule edge utiliser la méthode try get Value
+                    ulong key = ((ulong)Mathf.Min(startIndex, endIndex)) + (((ulong)Mathf.Max(startIndex, endIndex)) << 32);
+
+                    WingedEdge edge = null;
+
+                    if (!dicoWingedEdges.TryGetValue(key, out edge))
+                    {
+                        edge = new WingedEdge(edges.Count, startVertex, endVertex, newFace, null);
+                        edges.Add(edge);
+                        dicoWingedEdges.Add(key, edge);
+                        faceEdges.Add(edge);
+
+                        //On ajoute les edges associées à la face et aux vertices.
+                        if (newFace.edge == null) newFace.edge = edge;
+                        if (startVertex.edge == null) startVertex.edge = edge;
+                    }
+                    else
+                    {
+                        //Complète les info manquante la leftFace 
+                        edge.leftFace = newFace;
+                        if (newFace.edge == null) newFace.edge = edge;
+                        faceEdges.Add(edge);
+                    }
+
+                    //Il manque plus qu'à compléter les CCW et CW
+                }
+                for (int w = 0; w < faceEdges.Count; w++)
+                {
+                    if (newFace == faceEdges[w].rightFace)
+                    {
+                        faceEdges[w].startCWEdge = faceEdges[(w - 1 + faceEdges.Count) % faceEdges.Count];
+                        faceEdges[w].endCCWEdge = faceEdges[(w + 1) % faceEdges.Count];
+                    }
+                    else if (newFace == faceEdges[w].leftFace)
+                    {
+                        faceEdges[w].endCWEdge = faceEdges[(w - 1 + faceEdges.Count) % faceEdges.Count];
+                        faceEdges[w].startCCWEdge = faceEdges[(w + 1) % faceEdges.Count];
+                    }
+                }
+                faceEdges.Clear();
+
+                //MAJ CCW and CW Edge pour les borderEdges
+                for (int w = 0; w < edges.Count; w++)
+                {
+                    if (edges[w].leftFace == null)
+                    {
+                        edges[w].startCCWEdge = edges[w].FindStartCCWBorder();
+                        edges[w].endCWEdge = edges[w].FindEndCWBorder();
+                    }
+                }
+            }
+            //////vertices
+            string str = "Vertex - edges : \n";
+            foreach (Vertex v in vertices)
+            {
+                str += "V" + v.index.ToString() + ": " + v.position.ToString() + " | e" + v.edge.index + " \n";
+            }
+            Debug.Log(str);
+            //////faces
+            str = "Faces - edges : \n";
+            foreach (Face f in faces)
+            {
+                str += f.index.ToString() + ": F" + f.index.ToString() + " - e "+ f.edge.index + " \n";
+            }
+            Debug.Log(str);
+
+            //////wingedEdge
+
+            //str = "WingedEdges : \n";
+            foreach (WingedEdge e in edges)
+            {
+                str += $"e{e.index} : V{e.startVertex.index} - V{e.endVertex.index}| {(e.leftFace == null ? "NoLeftFace" : $"F{e.leftFace.index}")} | {(e.rightFace == null ? "NoRightFace" : $"F{e.rightFace.index}")}\n"; //| SCCW : e{e.startCCWEdge.index} - SCW : e{e.startCWEdge.index} - ECW : e{e.endCWEdge.index} - ECCW : e{e.endCCWEdge.index}\n";
+            }
+            Debug.Log(str);
+
+            GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
+
+        }
+        
         //MY CODE
         public void SubdivideCatmullClark(int NBSUB)
         {
@@ -248,9 +381,9 @@ namespace WingedEdge
                 
                 //Calcul mid points
                 float midX = 0,midY = 0,midZ = 0;
-                midX = edges[e].startVertex.GetPosition().x + edges[e].endVertex.GetPosition().x;
-                midY = edges[e].startVertex.GetPosition().y + edges[e].endVertex.GetPosition().y;
-                midZ = edges[e].startVertex.GetPosition().z + edges[e].endVertex.GetPosition().z;
+                midX = (edges[e].startVertex.GetPosition().x + edges[e].endVertex.GetPosition().x)/2;
+                midY = (edges[e].startVertex.GetPosition().y + edges[e].endVertex.GetPosition().y)/2;
+                midZ = (edges[e].startVertex.GetPosition().z + edges[e].endVertex.GetPosition().z)/2;
                 Vector3 m0 = new Vector3(   midX,
                                             midY,
                                             midZ);
@@ -327,10 +460,27 @@ namespace WingedEdge
 
                 //On stocke le nombre d'edges incidents de la vertice eq. nombre de faces adj. à la vertice
                 float n = adjFaces.Count();
-
+                
+                List<WingedEdge> borderEdges = new List<WingedEdge>();
+                borderEdges = vertices[v].GetBorderEdges();
                 //On calcul la nouvelle position de la vertice
-                V = (Q/n) + (2f*R/n) + ((n-3f)*V)/n;
-                Debug.Log(R + "--" + Q);
+                //Cas Bordure :
+                if(borderEdges.Count() != 0){
+                    float sumBX = 0,sumBY = 0,sumBZ = 0;
+                    for(int b = 0; b<borderEdges.Count(); ++b){
+                        sumBX += midPoints[borderEdges[b].index].x;
+                        sumBY += midPoints[borderEdges[b].index].y;
+                        sumBZ += midPoints[borderEdges[b].index].z;
+                    }
+                    sumBX += V.x;
+                    sumBY += V.y;
+                    sumBZ += V.z;
+                    V = new Vector3(sumBX/3,sumBY/3,sumBZ/3);
+                }
+                //Cas Non Bordure :
+                else{
+                    V = (Q/n) + (2f*R/n) + ((n-3f)*V)/n;
+                }
                 //Ajout du point V (position) de la vertice courante dans la liste
                 vertexPoints.Add(V);
             }
@@ -478,153 +628,6 @@ namespace WingedEdge
 
                 isRecycled = true;
             }
-        }
-
-        public bool isValid = false;
-        public WingedEdgeMesh(Mesh mesh)
-        {
-            // constructeur prenant un mesh Vertex-Face en paramï¿½tre
-            int nSides;
-            switch (mesh.GetTopology(0))
-            {
-                case MeshTopology.Quads:
-                    nSides = 4;
-                    break;
-                case MeshTopology.Triangles:
-                    nSides = 3;
-                    break;
-                default:
-                    isValid = false;
-                    return;
-            }
-            isValid = true;
-            vertices = new List<Vertex>();
-            edges = new List<WingedEdge>();
-            faces = new List<Face>();
-            //On compl�te la liste de vertices.
-            Vector3[] tmpVertices = mesh.vertices;
-            for (int i = 0; i < tmpVertices.Length; i++)
-            {
-                vertices.Add(new Vertex(i, tmpVertices[i]));
-            }
-
-            //On rï¿½cupï¿½re les quads et on les parcourt pour trouver les meshs
-            int[] indexes = mesh.GetIndices(0);
-            Dictionary<ulong, WingedEdge> dicoWingedEdges = new Dictionary<ulong, WingedEdge>();
-            List<WingedEdge> faceEdges = new List<WingedEdge>();
-
-            for (int i = 0; i < indexes.Length / nSides; i++)
-            {
-                int[] faceIndexes = new int[nSides];
-                for (int k = 0; k < nSides; k++)
-                {
-                    faceIndexes[k] = indexes[nSides * i + k];
-                }
-
-                Face newFace = new Face(faces.Count());
-                //On complete la liste de face 
-                faces.Add(newFace);
-
-                //On complete startVertex, endVertex, leftFace et rightFace
-                for (int j = 0; j < faceIndexes.Length; j++)
-                {
-                    int startIndex = faceIndexes[j];
-                    int endIndex = faceIndexes[(j + 1) % faceIndexes.Length];
-                    Vertex startVertex = vertices[startIndex];
-                    Vertex endVertex = vertices[endIndex];
-
-                    // creer un dictionnaire cle a laquell est associï¿½ une seule edge utiliser la mï¿½thode try get Value
-                    ulong key = ((ulong)Mathf.Min(startIndex, endIndex)) + (((ulong)Mathf.Max(startIndex, endIndex)) << 32);
-
-                    WingedEdge edge = null;
-
-                    if (!dicoWingedEdges.TryGetValue(key, out edge))
-                    {
-                        edge = new WingedEdge(edges.Count(), startVertex, endVertex, newFace, null);
-                        edges.Add(edge);
-                        dicoWingedEdges.Add(key, edge);
-                        faceEdges.Add(edge);
-
-                        //On ajoute les edges associï¿½es ï¿½ la face et aux vertices.
-                        if (newFace.edge == null) newFace.edge = edge;
-                        if (startVertex.edge == null) startVertex.edge = edge;
-                    }
-                    else
-                    {
-                        //Complï¿½te les info manquante la leftFace 
-                        edge.leftFace = newFace;
-                        if (newFace.edge == null) newFace.edge = edge;
-                        faceEdges.Add(edge);
-                    }
-
-                    //Il manque plus qu'ï¿½ complï¿½ter les CCW et CW
-                }
-                for (int w = 0; w < faceEdges.Count(); w++)
-                {
-                    if (newFace == faceEdges[w].rightFace)
-                    {
-                        faceEdges[w].startCWEdge = faceEdges[(w - 1 + faceEdges.Count()) % faceEdges.Count()];
-                        faceEdges[w].endCCWEdge = faceEdges[(w + 1) % faceEdges.Count()];
-                    }
-                    else if (newFace == faceEdges[w].leftFace)
-                    {
-                        faceEdges[w].endCWEdge = faceEdges[(w - 1 + faceEdges.Count()) % faceEdges.Count()];
-                        faceEdges[w].startCCWEdge = faceEdges[(w + 1) % faceEdges.Count()];
-                    }
-                }
-                faceEdges.Clear();
-
-                //MAJ CCW and CW Edge pour les borderEdges
-                for (int w = 0; w < edges.Count(); w++)
-                {
-                    if (edges[w].leftFace == null)
-                    {
-                        edges[w].startCCWEdge = edges[w].FindStartCCWBorder();
-                        edges[w].endCWEdge = edges[w].FindEndCWBorder();
-                    }
-                }
-                for(int w=0; w<faceEdges.Count(); w++)
-                {
-                    if (newFace == faceEdges[w].rightFace)
-                    {
-                        
-                        faceEdges[w].startCWEdge = edges.Find(e => (e.endVertex == faceEdges[w].startVertex && e.rightFace == newFace) || (e.startVertex == faceEdges[w].startVertex && e.leftFace == newFace));
-                        faceEdges[w].endCCWEdge = edges.Find(e => (e.startVertex == faceEdges[w].endVertex && e.rightFace == newFace) || (e.endVertex == faceEdges[w].endVertex && e.leftFace == newFace));
-                    }
-                    else if(newFace == faceEdges[w].leftFace)
-                    {
-                        faceEdges[w].endCWEdge = edges.Find(e => (e.startVertex == faceEdges[w].startVertex && e.rightFace == newFace) || (e.endVertex == faceEdges[w].startVertex && e.leftFace == newFace));
-                        faceEdges[w].startCCWEdge = edges.Find(e => (e.endVertex == faceEdges[w].endVertex && e.rightFace == newFace) || (e.startVertex == faceEdges[w].endVertex && e.leftFace == newFace));
-                    }
-                }
-                faceEdges.Clear();
-            }
-            ////vertices
-            string str = "Vertex - edges : \n";
-            foreach (Vertex v in vertices)
-            {
-                str += "V" + v.index.ToString() + ": " + v.position.ToString() + " | e" + v.edge.index + " \n";
-            }
-            //Debug.Log(str);
-            ////faces
-            str = "Faces - edges : \n";
-            foreach (Face f in faces)
-            {
-                str += f.index.ToString() + ": F" + f.index.ToString() + " - e "+ f.edge.index + " \n";
-            }
-            //Debug.Log(str);
-
-            //////wingedEdge
-
-            //str = "WingedEdges : \n";
-            foreach (WingedEdge e in edges)
-            {
-                str += $"e{e.index} : V{e.startVertex.index} - V{e.endVertex.index}| {(e.leftFace == null ? "NoLeftFace" : $"F{e.leftFace.index}")} | {(e.rightFace == null ? "NoRightFace" : $"F{e.rightFace.index}")}\n"; //| SCCW : e{e.startCCWEdge.index} - SCW : e{e.startCWEdge.index} - ECW : e{e.endCWEdge.index} - ECCW : e{e.endCCWEdge.index}\n";
-            }
-            //Debug.Log(str);
-
-            GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
-
         }
 
         public Mesh ConvertToFaceVertexMesh()
