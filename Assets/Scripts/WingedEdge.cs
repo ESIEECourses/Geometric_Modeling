@@ -384,11 +384,51 @@ namespace WingedEdge
         }   
 
 
-/*
+
         public void SplitEdge(WingedEdge edge, Vector3 splittingPoint)
-        {
+        {                 
+            //Création d'une nouvelle Vertex avec les coordonnées de SplittingPoint
+            Vertex splitPoint = new Vertex(vertices.Count, splittingPoint);
+
+            //Ajout dans la liste de vertices 
+            vertices.Add(splitPoint);
+    
+            //Creation d'une nouvelle Wingededge avec splitPoint comme StartVertex
+            WingedEdge splitEdge = new WingedEdge(edges.Count,
+                                                  splitPoint,
+                                                  edge.endVertex, 
+                                                  edge.rightFace, 
+                                                  edge.leftFace, 
+                                                  edge, 
+                                                  edge, 
+                                                  edge.endCWEdge, 
+                                                  edge.endCCWEdge);
+            edges.Add(splitEdge);
+            
+
+            if(edge == edge.endCCWEdge.startCWEdge)
+            {
+                edge.endCCWEdge.startCWEdge = splitEdge;
+            }
+            else if(edge == edge.endCWEdge.startCCWEdge){
+                edge.endCWEdge.startCCWEdge = splitEdge;
+            }
+            else if(edge == edge.endCWEdge.endCCWEdge){
+                edge.endCWEdge.endCCWEdge = splitEdge;
+            }
+            else if(edge == edge.endCCWEdge.endCWEdge){
+                edge.endCCWEdge.endCWEdge = splitEdge;
+            }
+
+            edge.endVertex = splitPoint;
+            edge.endVertex.edge = splitEdge;
+            edge.endCCWEdge = splitEdge;
+            edge.endCWEdge = splitEdge;
+            splitPoint.edge = splitEdge;
+            splitPoint.edge = splitEdge;
+            splitEdge.endVertex.edge = splitEdge;
         }
-*/
+
 
 
 
