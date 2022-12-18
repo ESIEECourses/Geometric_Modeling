@@ -202,6 +202,7 @@ namespace WingedEdge
 
                 //Mise à jour les postions des vertices grace à la liste de nouveaux points
                 for(int i = 0; i<vertexPoints.Count(); ++i){
+                    //Debug.Log(vertexPoints[i]);
                     vertices[i].position = vertexPoints[i];
                 }
             }
@@ -214,10 +215,10 @@ namespace WingedEdge
             //parcours de toutes les faces de WindegEdgeMesh
             for(int f = 0; f<faces.Count(); ++f){    
 
-                //RecupÃ©ration des points de la face courante
+                //Recupération des points de la face courante
                 List<Vertex> vertexCurrentFace = faces[f].GetVertex();
                 
-                //Recuperation des coordonnÃ©es de la liste de points de la face courante
+                //Recuperation des coordonnées de la liste de points de la face courante
                 List<Vector3> positionsVertexCurrentFace = new List<Vector3>();
                 for(int v = 0; v<vertexCurrentFace.Count(); ++v){
                     positionsVertexCurrentFace.Add(vertexCurrentFace[v].GetPosition())   ;
@@ -286,54 +287,50 @@ namespace WingedEdge
             //parcours de tous les vertices de WindegEdgeMesh
             for(int v = 0; v<vertices.Count(); ++v){
                 //On stocke la position courante de la vertice
-                Vector3 V = new Vector3(vertices[v].GetPosition().x,
-                                        vertices[v].GetPosition().y,
-                                        vertices[v].GetPosition().z);
+                Vector3 V = vertices[v].position;
 
                 //On récupère notre liste d'edges adjacents à notre vertex
                 List<WingedEdge> adjEdges = new List<WingedEdge>();
                 adjEdges = vertices[v].GetAdjEdges();
                 //On ajoute les positions des mid points de ces edges pour en trouver la moyenne
-                float sumMidX = 0,sumMidY = 0,sumMidZ = 0,nbAdjEd = 0;
+                float sumMidX = 0,sumMidY = 0,sumMidZ = 0;
                 for(int a = 0; a<adjEdges.Count(); ++a){
                     sumMidX += midPoints[adjEdges[a].index].x;
                     sumMidY += midPoints[adjEdges[a].index].y;
                     sumMidZ += midPoints[adjEdges[a].index].z;
-                    nbAdjEd++;
                 }
-                sumMidX = sumMidX/nbAdjEd;
-                sumMidY = sumMidY/nbAdjEd;
-                sumMidZ = sumMidZ/nbAdjEd;
+                //On récupère notre liste de faces adjacentes à notre vertex eq. nombre de edges inc. à la vertice
+                List<Face> adjFaces = new List<Face>();
+                adjFaces = vertices[v].GetAdjFaces();
+
+                sumMidX = sumMidX/adjFaces.Count();
+                sumMidY = sumMidY/adjFaces.Count();
+                sumMidZ = sumMidZ/adjFaces.Count();
                 //On stocke la moyenne des "mid-points" des edges adj. à la vertice dans R
                 Vector3 R = new Vector3(sumMidX,
                                         sumMidY,
                                         sumMidZ);
-                
-                //On récupère notre liste de faces adjacentes à notre vertex
-                List<Face> adjFaces = new List<Face>();
-                adjFaces = vertices[v].GetAdjFaces();
                 //On ajoute les positions des face points de ces faces pour en trouver la moyenne
-                float sumFacePX = 0,sumFacePY = 0,sumFacePZ = 0,nbAdjF = 0;
+                float sumFacePX = 0,sumFacePY = 0,sumFacePZ = 0;
                 for(int a = 0; a<adjFaces.Count(); ++a){
                     sumFacePX += facePoints[adjFaces[a].index].x;
                     sumFacePY += facePoints[adjFaces[a].index].y;
                     sumFacePZ += facePoints[adjFaces[a].index].z;
-                    nbAdjF++;
                 }
-                sumFacePX = sumFacePX/nbAdjF;
-                sumFacePY = sumFacePY/nbAdjF;
-                sumFacePZ = sumFacePZ/nbAdjF;
+                sumFacePX = sumFacePX/adjFaces.Count();
+                sumFacePY = sumFacePY/adjFaces.Count();
+                sumFacePZ = sumFacePZ/adjFaces.Count();
                 //On stocke la moyenne des "face points" des faces adj. à la vertice dans Q
                 Vector3 Q = new Vector3(sumFacePX,
                                         sumFacePY,
                                         sumFacePZ);
 
                 //On stocke le nombre d'edges incidents de la vertice eq. nombre de faces adj. à la vertice
-                float n = nbAdjF;
+                float n = adjFaces.Count();
 
                 //On calcul la nouvelle position de la vertice
-                V = (1/n)*Q + (2/n)*R + (n-3)*V/(n);
-
+                V = (Q/n) + (2f*R/n) + ((n-3f)*V)/n;
+                Debug.Log(R + "--" + Q);
                 //Ajout du point V (position) de la vertice courante dans la liste
                 vertexPoints.Add(V);
             }
@@ -608,14 +605,14 @@ namespace WingedEdge
             {
                 str += "V" + v.index.ToString() + ": " + v.position.ToString() + " | e" + v.edge.index + " \n";
             }
-            Debug.Log(str);
+            //Debug.Log(str);
             ////faces
             str = "Faces - edges : \n";
             foreach (Face f in faces)
             {
                 str += f.index.ToString() + ": F" + f.index.ToString() + " - e "+ f.edge.index + " \n";
             }
-            Debug.Log(str);
+            //Debug.Log(str);
 
             //////wingedEdge
 
@@ -624,7 +621,7 @@ namespace WingedEdge
             {
                 str += $"e{e.index} : V{e.startVertex.index} - V{e.endVertex.index}| {(e.leftFace == null ? "NoLeftFace" : $"F{e.leftFace.index}")} | {(e.rightFace == null ? "NoRightFace" : $"F{e.rightFace.index}")}\n"; //| SCCW : e{e.startCCWEdge.index} - SCW : e{e.startCWEdge.index} - ECW : e{e.endCWEdge.index} - ECCW : e{e.endCCWEdge.index}\n";
             }
-            Debug.Log(str);
+            //Debug.Log(str);
 
             GUIUtility.systemCopyBuffer = ConvertToCSV("\t");
 
@@ -722,7 +719,7 @@ namespace WingedEdge
                 "Index" + separator + "Start Vertex" + separator + "End Vertex" + separator + "Left Face" + separator + "Right Face" + separator + "Start CCW Edge" + separator + "Start CW Edge" + separator + "End CW Edge" + separator + "End CCW Edge" + separator + separator +
                 "Index" + separator + "Edge\n"
                 + string.Join("\n", strings);
-            Debug.Log(str);
+            //Debug.Log(str);
             return str;
         }
         public void DrawGizmos(bool drawVertices, bool drawEdges, bool drawFaces, Transform transform)
@@ -740,7 +737,7 @@ namespace WingedEdge
                 {
                     Vector3 worldPos = transform.TransformPoint(vertices[i].position);
                     Handles.Label(worldPos, "V" + vertices[i].index, style);
-                    Gizmos.DrawSphere(worldPos,.25f);
+                    Gizmos.DrawSphere(worldPos,.15f);
                 }
             }
             //faces

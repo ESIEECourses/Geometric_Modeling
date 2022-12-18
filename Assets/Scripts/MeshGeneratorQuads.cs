@@ -73,7 +73,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         
 
         //Box
-        m_Mf.mesh = CreateBox(new Vector3(3,3,3));
+        //m_Mf.mesh = CreateBox(new Vector3(3,3,3));
 
         //Chips
         //m_Mf.mesh = CreateChips(new Vector3(3,3,3));
@@ -174,7 +174,7 @@ public class MeshGeneratorQuads : MonoBehaviour
         //m_Mf.mesh = CreateStrip(7, new Vector3(4, 1, 3));
         //m_Mf.mesh = CreateNormalizedGridXZ(7, 4);
         this.m_win = new WingedEdgeMesh(m_Mf.mesh);
-        m_win.SubdivideCatmullClark(10);
+        m_win.SubdivideCatmullClark(1);
 
         //this.m_win = new WingedEdgeMesh(m_Mf.mesh);
         //m_Mf.mesh = m_win.ConvertToFaceVertexMesh();
