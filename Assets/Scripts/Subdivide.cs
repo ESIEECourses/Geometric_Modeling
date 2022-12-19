@@ -24,8 +24,8 @@ public class Subdivide : MonoBehaviour
         //Boucle infinie
         while(true)
         {
-            yield return new WaitForSeconds(1f);
-            if (compteur == 3)
+            yield return new WaitForSeconds(2f);
+            if (compteur % 4 == 0)
             {
                 m_WingedEdgeMesh = new WingedEdgeMesh(m_Mesh_init);
                 this.m_Mf.mesh = this.m_WingedEdgeMesh.ConvertToFaceVertexMesh();
